@@ -1,0 +1,29 @@
+[project]
+name = "docviz"
+version = "0.1.0"
+description = "A Python library for extracting and analyzing content from any documents, supporting batch and selective extraction, custom configuration, and multiple output formats."
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "fresh-milkshake" }]
+license = { file = "LICENSE" }
+keywords = [
+    "pdf",
+    "document analysis",
+    "extraction",
+    "scientific papers",
+    "batch processing",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Topic :: Text Processing :: Linguistic",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+dependencies = [
+    # Add your runtime dependencies here, for example:
+    # "pypdf>=3.0.0",
+    # "pandas>=2.0.0",
+    # "tqdm>=4.0.0"
+]
