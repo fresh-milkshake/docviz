@@ -8,7 +8,6 @@
   ![python](https://img.shields.io/badge/python-3.10+-141414.svg)
   [![version](https://img.shields.io/pypi/v/docviz-python?color=141414&label=version)](https://pypi.org/project/docviz-python/)
   ![License](https://img.shields.io/badge/License-MIT-141414.svg)
-  ![downloads](https://img.shields.io/pypi/dm/docviz-python?color=141414&label=downloads)
 </div>
 
 
