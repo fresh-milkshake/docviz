@@ -1,10 +1,10 @@
 <div align="left">
-  <img src="assets/header_long.svg" alt="docviz" width="100%">
+  <img src="https://raw.githubusercontent.com/fresh-milkshake/docviz/refs/heads/main/assets/header_long.svg" alt="docviz" width="100%">
   
-  <img src="https://img.shields.io/badge/python-3.10+-141414.svg" alt="python">
-  <img src="https://img.shields.io/pypi/v/docviz-python?color=141414&label=version" alt="version">
-  <img src="https://img.shields.io/badge/License-MIT-141414.svg" alt="License"> 
-  <img src="https://img.shields.io/pypi/dm/docviz-python?color=141414&label=downloads" alt="downloads">
+  ![python](https://img.shields.io/badge/python-3.10+-141414.svg)
+  [![version](https://img.shields.io/pypi/v/docviz-python?color=141414&label=version)](https://pypi.org/project/docviz-python/)
+  ![License](https://img.shields.io/badge/License-MIT-141414.svg)
+  ![downloads](https://img.shields.io/pypi/dm/docviz-python?color=141414&label=downloads)
 </div>
 
 
