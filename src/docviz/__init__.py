@@ -1,4 +1,4 @@
-from .lib.document import Document
+from .lib.document.document import Document
 from .lib.functions import batch_extract, extract_content, extract_content_sync
 from .types import (
     ExtractionConfig,

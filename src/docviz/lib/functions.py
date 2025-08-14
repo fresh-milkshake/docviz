@@ -1,4 +1,4 @@
-from ..lib.document import Document
+from .document.document import Document
 from ..types.extraction_config import ExtractionConfig
 from ..types.detection_config import DetectionConfig
 from ..types.extraction_result import ExtractionResult

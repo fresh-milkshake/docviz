@@ -1,12 +1,12 @@
 from pathlib import Path
 
-from ..types import (
+from ...types import (
     ExtractionConfig,
     DetectionConfig,
     ExtractionResult,
     ExtractionType,
 )
-from ..lib.functions import extract_content, extract_content_sync
+from ..functions import extract_content, extract_content_sync
 
 
 class Document:
