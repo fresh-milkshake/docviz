@@ -22,8 +22,24 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Information Analysis",
 ]
 dependencies = [
-    # Add your runtime dependencies here, for example:
-    # "pypdf>=3.0.0",
-    # "pandas>=2.0.0",
-    # "tqdm>=4.0.0"
+    "click>=8.2.1",
+    "loguru>=0.7.3",
+    "openai>=1.98.0",
+    "opencv-python>=4.12.0.88",
+    "pymupdf>=1.26.3",
+    "pytesseract>=0.3.13",
+]
+
+[project.optional-dependencies]
+dev = [
+    "doclayout-yolo>=0.0.4",
+    "huggingface-hub>=0.34.3",
+    "jupyter>=1.1.1",
+    "pyright>=1.1.403",
+    "ruff>=0.12.7",
+]
+showcase = [
+    "ipykernel>=6.30.1", 
+    "seaborn>=0.13.2", 
+    "ultralytics>=8.3.174"
 ]

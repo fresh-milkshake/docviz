@@ -22,7 +22,7 @@
 ## 📦 Installation
 
 ```bash
-pip install docviz
+pip install docviz-python
 ```
 
 ## Quick Start

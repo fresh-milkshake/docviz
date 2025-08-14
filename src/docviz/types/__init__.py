@@ -3,6 +3,7 @@ from .extraction_result import ExtractionResult, ExtractionEntry
 from .detection_config import DetectionConfig
 from .save_format import SaveFormat
 from .extraction_type import ExtractionType
+from .detection_result import DetectionResult
 
 __all__ = [
     "ExtractionConfig",
@@ -11,4 +12,5 @@ __all__ = [
     "SaveFormat",
     "ExtractionEntry",
     "ExtractionType",
+    "DetectionResult",
 ]
