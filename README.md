@@ -2,9 +2,9 @@
   <img src="assets/header_long.svg" alt="docviz" width="100%">
   
   <img src="https://img.shields.io/badge/python-3.10+-141414.svg" alt="python">
-  <img src="https://img.shields.io/pypi/v/deocviz?color=141414&label=version" alt="version">
+  <img src="https://img.shields.io/pypi/v/docviz-python?color=141414&label=version" alt="version">
   <img src="https://img.shields.io/badge/License-MIT-141414.svg" alt="License"> 
-  <img src="https://static.pepy.tech/badge/docviz" alt="PyPI Downloads">
+  <img src="https://img.shields.io/pypi/dm/docviz-python?color=141414&label=downloads" alt="downloads">
 </div>
 
 
