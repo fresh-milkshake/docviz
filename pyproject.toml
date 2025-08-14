@@ -1,5 +1,5 @@
 [project]
-name = "docviz"
+name = "docviz-python"
 version = "0.1.0"
 description = "A Python library for extracting and analyzing content from any documents, supporting batch and selective extraction, custom configuration, and multiple output formats."
 readme = "README.md"
