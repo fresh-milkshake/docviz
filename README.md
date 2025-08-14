@@ -1,3 +1,7 @@
+> [!Caution]
+> This project is in active development. The API is subject to change and breaking changes may occur. Package might not work until 1.5.0 release.
+
+
 <div align="left">
   <img src="https://raw.githubusercontent.com/fresh-milkshake/docviz/refs/heads/main/assets/header_long.svg" alt="docviz" width="100%">
   
@@ -9,7 +13,6 @@
 
 
 ## Overview
-
 
 **Extract content from documents easily with Python.**
 
