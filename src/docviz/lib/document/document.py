@@ -1,4 +1,5 @@
 from pathlib import Path
+import asyncio
 
 from ...types import (
     ExtractionConfig,
@@ -7,6 +8,10 @@ from ...types import (
     ExtractionType,
 )
 from ..functions import extract_content, extract_content_sync
+from ...logging import get_logger
+
+
+logger = get_logger(__name__)
 
 
 class Document:

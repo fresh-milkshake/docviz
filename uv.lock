@@ -557,15 +557,17 @@ wheels = [
 
 [[package]]
 name = "docviz-python"
-version = "1.0.1"
+version = "0.2.0"
 source = { virtual = "." }
 dependencies = [
     { name = "click" },
     { name = "loguru" },
     { name = "openai" },
     { name = "opencv-python" },
+    { name = "pandas" },
     { name = "pymupdf" },
     { name = "pytesseract" },
+    { name = "requests" },
 ]
 
 [package.optional-dependencies]
@@ -592,9 +594,11 @@ requires-dist = [
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "openai", specifier = ">=1.98.0" },
     { name = "opencv-python", specifier = ">=4.12.0.88" },
+    { name = "pandas", specifier = ">=2.3.1" },
     { name = "pymupdf", specifier = ">=1.26.3" },
     { name = "pyright", marker = "extra == 'dev'", specifier = ">=1.1.403" },
     { name = "pytesseract", specifier = ">=0.3.13" },
+    { name = "requests", specifier = ">=2.32.4" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.12.7" },
     { name = "seaborn", marker = "extra == 'showcase'", specifier = ">=0.13.2" },
     { name = "ultralytics", marker = "extra == 'showcase'", specifier = ">=8.3.174" },

@@ -4,7 +4,7 @@ import docviz
 
 
 async def main():
-    document = docviz.Document("data\2507.21509v1.pdf")
+    document = docviz.Document(r"examples\data\2507.21509v1.pdf")
 
     extractions = await document.extract_content()
     extractions.save("results", save_format=docviz.SaveFormat.JSON)

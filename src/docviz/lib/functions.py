@@ -1,12 +1,16 @@
-from .document.document import Document
+from typing import TYPE_CHECKING
+
 from ..types.extraction_config import ExtractionConfig
 from ..types.detection_config import DetectionConfig
 from ..types.extraction_result import ExtractionResult
 from ..types.extraction_type import ExtractionType
 
+if TYPE_CHECKING:
+    from .document.document import Document
+
 
 def batch_extract(
-    documents: list[Document],
+    documents: list["Document"],
     extraction_config: ExtractionConfig | None = None,
     detection_config: DetectionConfig | None = None,
     includes: list[ExtractionType] | None = None,
@@ -18,7 +22,7 @@ def batch_extract(
 
 
 async def extract_content(
-    document: Document,
+    document: "Document",
     extraction_config: ExtractionConfig | None = None,
     detection_config: DetectionConfig | None = None,
     includes: list[ExtractionType] | None = None,
@@ -27,7 +31,7 @@ async def extract_content(
 
 
 def extract_content_sync(
-    document: Document,
+    document: "Document",
     extraction_config: ExtractionConfig | None = None,
     detection_config: DetectionConfig | None = None,
     includes: list[ExtractionType] | None = None,
