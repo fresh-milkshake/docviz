@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING
 
-from ..types.extraction_config import ExtractionConfig
-from ..types.detection_config import DetectionConfig
-from ..types.extraction_result import ExtractionResult
-from ..types.extraction_type import ExtractionType
+from docviz.types.detection_config import DetectionConfig
+from docviz.types.extraction_config import ExtractionConfig
+from docviz.types.extraction_result import ExtractionResult
+from docviz.types.extraction_type import ExtractionType
 
 if TYPE_CHECKING:
     from .document.document import Document

@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import List, TypeAlias
+from typing import TypeAlias
 
 import numpy as np
 
 from docviz.types import DetectionConfig, DetectionResult
 
-DetectionResults: TypeAlias = List[DetectionResult]
+DetectionResults: TypeAlias = list[DetectionResult]
 
 
 class BaseDetectionBackend(ABC):
@@ -50,7 +50,6 @@ class BaseDetectionBackend(ABC):
     def normalize_label(cls, raw_label: str) -> str:
         """Normalize a raw backend label to the canonical one for this backend."""
         raise NotImplementedError
-
 
     @classmethod
     @abstractmethod

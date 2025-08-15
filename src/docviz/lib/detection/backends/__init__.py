@@ -9,4 +9,4 @@ class DetectionBackendEnum(Enum):
     YOLO_DOCLAYNET = "yolo_doclaynet"
 
 
-__all__ = ["DoclayoutYoloBackend", "YoloDoclaynetBackend", "DetectionBackendEnum"]
+__all__ = ["DetectionBackendEnum", "DoclayoutYoloBackend", "YoloDoclaynetBackend"]

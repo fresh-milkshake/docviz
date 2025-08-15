@@ -1,17 +1,16 @@
-from typing import List
 from pathlib import Path
 
-import numpy as np
 import cv2
+import numpy as np
 
 from docviz.types import DetectionResult
 
 
 def filter_detections(
-    detections: List[DetectionResult],
-    labels_to_include: List[str] = [],
-    labels_to_exclude: List[str] = [],
-) -> List[DetectionResult]:
+    detections: list[DetectionResult],
+    labels_to_include: list[str] | None = None,
+    labels_to_exclude: list[str] | None = None,
+) -> list[DetectionResult]:
     """
     Filter detections to only include elements with specified labels.
 
@@ -23,14 +22,14 @@ def filter_detections(
         List[DetectionResult]: Filtered list containing only detections with specified labels.
     """
 
+    if labels_to_exclude is None:
+        labels_to_exclude = []
+    if labels_to_include is None:
+        labels_to_include = []
     if labels_to_include:
-        detections = [
-            det for det in detections if det.label_name.lower() in labels_to_include
-        ]
+        detections = [det for det in detections if det.label_name.lower() in labels_to_include]
     if labels_to_exclude:
-        detections = [
-            det for det in detections if det.label_name.lower() not in labels_to_exclude
-        ]
+        detections = [det for det in detections if det.label_name.lower() not in labels_to_exclude]
     return detections
 
 

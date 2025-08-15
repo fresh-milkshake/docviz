@@ -1,11 +1,10 @@
-from pathlib import Path
-from typing import List
 from concurrent.futures import ProcessPoolExecutor, as_completed
+from pathlib import Path
 
 import fitz
 
-from docviz.logging import get_logger
 from docviz.constants import CONVERSION_MAX_WORKERS
+from docviz.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -50,7 +49,7 @@ def pdf_to_png(
     zoom_x: float = 5,
     zoom_y: float = 5,
     colorspace: str = "rgb",
-) -> List[Path]:
+) -> list[Path]:
     """
     Convert each page of a PDF to a very high-quality PNG file using PyMuPDF and process pool.
 
@@ -74,7 +73,7 @@ def pdf_to_png(
         num_pages = len(doc)
     logger.info(f"PDF has {num_pages} pages")
 
-    image_paths: List[Path] = []
+    image_paths: list[Path] = []
     with ProcessPoolExecutor(max_workers=CONVERSION_MAX_WORKERS) as executor:
         logger.debug("Starting parallel PDF rendering")
         futures = [

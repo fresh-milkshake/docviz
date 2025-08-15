@@ -14,4 +14,4 @@ class ExtractionType(enum.Enum):
         return self.value
 
     def get_all(self):
-        return [e for e in ExtractionType]
+        return list(ExtractionType)

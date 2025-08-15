@@ -1,4 +1,4 @@
-from .frontend import Detector, DetectionResult
 from .backends import DetectionBackendEnum
+from .frontend import DetectionResult, Detector
 
-__all__ = ["Detector", "DetectionBackendEnum", "DetectionResult"]
+__all__ = ["DetectionBackendEnum", "DetectionResult", "Detector"]

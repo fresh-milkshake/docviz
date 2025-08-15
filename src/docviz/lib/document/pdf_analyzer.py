@@ -1,6 +1,7 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Iterable, List, Tuple
+from typing import Any
 
 import fitz
 
@@ -23,22 +24,22 @@ class PageAnalysis:
 
     page_index: int
     has_text: bool
-    image_rects: List[Tuple[float, float, float, float]]
+    image_rects: list[tuple[float, float, float, float]]
     is_full_page_image: bool
-    page_rect: Tuple[float, float, float, float]
+    page_rect: tuple[float, float, float, float]
 
 
-def _collect_image_rects(page: Any) -> List[Tuple[float, float, float, float]]:
+def _collect_image_rects(page: Any) -> list[tuple[float, float, float, float]]:
     """Collect image rectangles from a page via rawdict blocks.
 
     Returns rectangles in page coordinate space (points).
     """
-    rects: List[Tuple[float, float, float, float]] = []
+    rects: list[tuple[float, float, float, float]] = []
     raw = page.get_text("rawdict")
     for block in raw.get("blocks", []):
         if block.get("type") == 1:
             bbox = block.get("bbox")
-            if isinstance(bbox, (list, tuple)) and len(bbox) == 4:
+            if isinstance(bbox, list | tuple) and len(bbox) == 4:
                 x0, y0, x1, y1 = bbox
                 rects.append((float(x0), float(y0), float(x1), float(y1)))
     logger.debug(f"Found {len(rects)} image blocks on page")
@@ -52,7 +53,7 @@ def _has_any_text(page: Any) -> bool:
 
 
 def _is_scan_like(
-    page: Any, image_rects: List[Tuple[float, float, float, float]], has_text: bool
+    page: Any, image_rects: list[tuple[float, float, float, float]], has_text: bool
 ) -> bool:
     """Heuristic to detect scan-like pages: no text and one large image covering most of the page area."""
     if has_text:
@@ -65,13 +66,11 @@ def _is_scan_like(
     img_area = float((x1 - x0) * (y1 - y0))
     coverage = img_area / page_area if page_area > 0 else 0.0
     decision = coverage >= 0.9
-    logger.debug(
-        f"Scan-like heuristic: coverage={coverage:.3f} -> {'YES' if decision else 'NO'}"
-    )
+    logger.debug(f"Scan-like heuristic: coverage={coverage:.3f} -> {'YES' if decision else 'NO'}")
     return decision
 
 
-def analyze_pdf(pdf_path: str | Path) -> List[PageAnalysis]:
+def analyze_pdf(pdf_path: str | Path) -> list[PageAnalysis]:
     """Analyze each page to determine text presence and image regions.
 
     Args:
@@ -82,7 +81,7 @@ def analyze_pdf(pdf_path: str | Path) -> List[PageAnalysis]:
     """
     path = str(pdf_path)
     logger.info(f"Starting PDF analysis: {path}")
-    results: List[PageAnalysis] = []
+    results: list[PageAnalysis] = []
     with fitz.open(path) as doc:
         for idx in range(len(doc)):
             page = doc.load_page(idx)
@@ -126,14 +125,12 @@ def extract_pdf_page_text(pdf_path: str | Path, page_index: int) -> str:
         page = doc.load_page(page_index)
         text: str = page.get_text("text")  # type: ignore[attr-defined]
         stripped = text.strip()
-        logger.debug(
-            f"Extracted PDF text from page {page_index + 1}: {len(stripped)} characters"
-        )
+        logger.debug(f"Extracted PDF text from page {page_index + 1}: {len(stripped)} characters")
         return stripped
 
 
 def _rectangles_intersect(
-    a: Tuple[float, float, float, float], b: Tuple[float, float, float, float]
+    a: tuple[float, float, float, float], b: tuple[float, float, float, float]
 ) -> bool:
     """Check if two rectangles in (x0, y0, x1, y1) intersect.
 
@@ -147,8 +144,8 @@ def _rectangles_intersect(
 def extract_pdf_text_excluding_regions(
     pdf_path: str | Path,
     page_index: int,
-    exclude_rects: Iterable[Tuple[float, float, float, float]]
-    | List[Tuple[float, float, float, float]],
+    exclude_rects: Iterable[tuple[float, float, float, float]]
+    | list[tuple[float, float, float, float]],
 ) -> str:
     """Extract text from a PDF page while excluding content inside given rectangles.
 
@@ -160,9 +157,8 @@ def extract_pdf_text_excluding_regions(
     Returns:
         Concatenated text from non-excluded text blocks.
     """
-    excludes: List[Tuple[float, float, float, float]] = [
-        (float(x0), float(y0), float(x1), float(y1))
-        for (x0, y0, x1, y1) in exclude_rects
+    excludes: list[tuple[float, float, float, float]] = [
+        (float(x0), float(y0), float(x1), float(y1)) for (x0, y0, x1, y1) in exclude_rects
     ]
 
     with fitz.open(str(pdf_path)) as doc:
@@ -171,13 +167,13 @@ def extract_pdf_text_excluding_regions(
 
     kept_blocks = 0
     dropped_blocks = 0
-    parts: List[str] = []
+    parts: list[str] = []
     for block in raw.get("blocks", []):
         if block.get("type") != 0:
             # Keep only text blocks
             continue
         bbox = block.get("bbox")
-        if not (isinstance(bbox, (list, tuple)) and len(bbox) == 4):
+        if not (isinstance(bbox, list | tuple) and len(bbox) == 4):
             continue
         rect = (float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3]))
         if any(_rectangles_intersect(rect, ex) for ex in excludes):
@@ -185,9 +181,9 @@ def extract_pdf_text_excluding_regions(
             continue
 
         # Concatenate spans within lines for this block
-        block_text_parts: List[str] = []
+        block_text_parts: list[str] = []
         for line in block.get("lines", []):
-            line_parts: List[str] = []
+            line_parts: list[str] = []
             for span in line.get("spans", []):
                 text: str = span.get("text", "")
                 if text:

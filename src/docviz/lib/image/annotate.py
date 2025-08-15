@@ -1,8 +1,8 @@
-import numpy as np
 from pathlib import Path
 from typing import Any
 
 import cv2
+import numpy as np
 
 from docviz.logging import get_logger
 from docviz.types import DetectionResult
@@ -34,9 +34,9 @@ def _generate_vibrant_colors(n: int) -> list[tuple[int, int, int]]:
     blended: list[tuple[int, int, int]] = []
     for bgr in colors:
         b, g, r = int(bgr[0]), int(bgr[1]), int(bgr[2])
-        b = int(round(0.8 * b + 0.2 * 255))
-        g = int(round(0.8 * g + 0.2 * 255))
-        r = int(round(0.8 * r + 0.2 * 255))
+        b = round(0.8 * b + 0.2 * 255)
+        g = round(0.8 * g + 0.2 * 255)
+        r = round(0.8 * r + 0.2 * 255)
         blended.append((b, g, r))
     return blended
 
@@ -60,9 +60,9 @@ def _make_pale_color(bgr: tuple[int, int, int]) -> tuple[int, int, int]:
     pale_bgr = cv2.cvtColor(np.uint8([[[h, s, v]]]), cv2.COLOR_HSV2BGR)[0, 0]  # type: ignore
     b, g, r = int(pale_bgr[0]), int(pale_bgr[1]), int(pale_bgr[2])
     # Soft blend with white for a print-like feel
-    b = int(round(0.85 * b + 0.15 * 255))
-    g = int(round(0.85 * g + 0.15 * 255))
-    r = int(round(0.85 * r + 0.15 * 255))
+    b = round(0.85 * b + 0.15 * 255)
+    g = round(0.85 * g + 0.15 * 255)
+    r = round(0.85 * r + 0.15 * 255)
     return (b, g, r)
 
 
@@ -121,7 +121,7 @@ class FileAnnotator:
             if label not in labels:
                 labels.append(label)
         colors = _generate_vibrant_colors(len(labels))
-        return {label: color for label, color in zip(labels, colors)}
+        return dict(zip(labels, colors, strict=False))
 
     def annotate(self) -> np.ndarray:
         """
@@ -242,7 +242,7 @@ class NumpyAnnotator:
             if label not in labels:
                 labels.append(label)
         colors = _generate_vibrant_colors(len(labels))
-        return {label: color for label, color in zip(labels, colors)}
+        return dict(zip(labels, colors, strict=False))
 
     def annotate(self) -> np.ndarray:
         """

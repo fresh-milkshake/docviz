@@ -6,9 +6,10 @@ IoU-based deduplication. A convenience `remove_duplicates` function exposes a
 single entry point for callers.
 """
 
-import numpy as np
-from typing import List, Optional
 from copy import deepcopy
+
+import numpy as np
+
 from docviz.types import DetectionResult
 
 
@@ -72,26 +73,23 @@ def remove_duplicates_iou(
         for j in range(i + 1, len(detections_sorted)):
             if used[j]:
                 continue
-            if det.label == detections_sorted[j].label:
-                if (
-                    _compute_iou_vectorized(
-                        np.array(det.bbox), np.array(detections_sorted[j].bbox)
-                    )
-                    > iou_threshold
-                ):
-                    used[j] = True
+            if det.label == detections_sorted[j].label and (
+                _compute_iou_vectorized(np.array(det.bbox), np.array(detections_sorted[j].bbox))
+                > iou_threshold
+            ):
+                used[j] = True
 
     return filtered
 
 
 def remove_duplicates_nms(
-    detections: List[DetectionResult],
+    detections: list[DetectionResult],
     iou_threshold: float = 0.5,
     soft_nms: bool = False,
     sigma: float = 0.5,
     score_threshold: float = 0.001,
-    max_detections: Optional[int] = None,
-) -> List[DetectionResult]:
+    max_detections: int | None = None,
+) -> list[DetectionResult]:
     """
     Advanced Non-Maximum Suppression with optional Soft-NMS support.
 
@@ -141,9 +139,7 @@ def remove_duplicates_nms(
     return filtered_results
 
 
-def _fast_nms(
-    detections: List[DetectionResult], iou_threshold: float
-) -> List[DetectionResult]:
+def _fast_nms(detections: list[DetectionResult], iou_threshold: float) -> list[DetectionResult]:
     """Optimized NMS implementation using vectorized operations."""
     if len(detections) <= 1:
         return detections
@@ -187,11 +183,11 @@ def _fast_nms(
 
 
 def _soft_nms(
-    detections: List[DetectionResult],
+    detections: list[DetectionResult],
     iou_threshold: float,
     sigma: float,
     score_threshold: float,
-) -> List[DetectionResult]:
+) -> list[DetectionResult]:
     """
     Soft-NMS implementation that reduces scores instead of removing detections.
     Based on "Improving Object Detection With One Line of Code" (Bodla et al.)

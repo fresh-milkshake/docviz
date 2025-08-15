@@ -1,13 +1,12 @@
-from typing import List
+
 import numpy as np
 from ultralytics import YOLO
 
-
 from docviz.lib.detection.backends.base import BaseDetectionBackend
-from docviz.lib.detection.labels import CanonicalLabel
 from docviz.lib.detection.deduplication import remove_duplicates_nms
-from docviz.types import DetectionConfig, DetectionResult
+from docviz.lib.detection.labels import CanonicalLabel
 from docviz.logging import get_logger
+from docviz.types import DetectionConfig, DetectionResult
 
 logger = get_logger(__name__)
 
@@ -39,7 +38,7 @@ class YoloDoclaynetBackend(BaseDetectionBackend):
     def detect(
         self,
         image: np.ndarray,
-    ) -> List[DetectionResult]:
+    ) -> list[DetectionResult]:
         """
         Run detection on an image and return detection results.
 
@@ -57,11 +56,11 @@ class YoloDoclaynetBackend(BaseDetectionBackend):
         result = self.model(image)[0]
         height, width = image.shape[:2]
 
-        detections: List[DetectionResult] = []
+        detections: list[DetectionResult] = []
         for label, box, conf in zip(
             result.boxes.cls.tolist(),
             result.boxes.xyxyn.tolist(),
-            result.boxes.conf.tolist(),
+            result.boxes.conf.tolist(), strict=False,
         ):
             label_idx = int(label)
             bbox = [
@@ -79,9 +78,7 @@ class YoloDoclaynetBackend(BaseDetectionBackend):
                 confidence=confidence,
             )
             detections.append(detection)
-            logger.debug(
-                f"Detection: {detection.label_name} at {bbox} (conf: {confidence:.3f})"
-            )
+            logger.debug(f"Detection: {detection.label_name} at {bbox} (conf: {confidence:.3f})")
 
         logger.info(f"Layout detection completed: {len(detections)} objects found")
 

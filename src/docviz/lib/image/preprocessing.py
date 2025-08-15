@@ -1,16 +1,16 @@
-from PIL import Image, ImageDraw
-import numpy as np
-from typing import List
 
-from docviz.types import RectangleTuple, RectangleUnion, Color
+import numpy as np
+from PIL import Image, ImageDraw
+
 from docviz.logging import get_logger
+from docviz.types import Color, RectangleTuple, RectangleUnion
 
 logger = get_logger(__name__)
 
 
 def fill_regions_with_color(
     image: np.ndarray,
-    regions: List[RectangleUnion],
+    regions: list[RectangleUnion],
     color: Color = (255, 255, 255),
 ) -> np.ndarray:
     """

@@ -1,23 +1,23 @@
-from typing import Any, Dict, List, Optional, cast
+import json
 import tempfile
 from pathlib import Path
-import json
+from typing import Any, cast
+
 import cv2
 import numpy as np
 
-from docviz.logging import get_logger
+from docviz.lib.detection import Detector
 from docviz.lib.document import (
-    pdf_to_png,
-    extract_text_from_image,
     analyze_pdf,
     extract_pdf_page_text,
     extract_pdf_text_excluding_regions,
+    extract_text_from_image,
+    pdf_to_png,
 )
-from docviz.lib.image import ChartSummarizer
-from docviz.lib.image import extract_regions, fill_regions_with_color
 from docviz.lib.extraction.utils import filter_detections
-from docviz.lib.detection import Detector
-from docviz.types import RectangleTuple, RectangleUnion, DetectionResult
+from docviz.lib.image import ChartSummarizer, extract_regions, fill_regions_with_color
+from docviz.logging import get_logger
+from docviz.types import DetectionResult, RectangleTuple, RectangleUnion
 
 logger = get_logger(__name__)
 
@@ -26,8 +26,8 @@ def pipeline(
     document_path: str,
     model_path: str,
     output_dir: str,
-    page_limit: Optional[int] = None,
-) -> List[Dict[str, Any]]:
+    page_limit: int | None = None,
+) -> list[dict[str, Any]]:
     """
     Full pipeline: convert PDF to PNG, detect charts, extract text, and summarize.
 
@@ -95,7 +95,7 @@ def pipeline(
         logger.info("Models initialized successfully")
 
         # Process each page
-        results: List[Dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
         for idx, img_path in enumerate(image_paths):
             img = cv2.imread(str(img_path), cv2.IMREAD_COLOR)
             if img is None:
@@ -114,54 +114,48 @@ def pipeline(
             analysis = page_analyses[idx]
             # TODO: Pass settings through function arguments with correct types instead of using global settings
             prefer_pdf_text = settings.processing.prefer_pdf_text
-            fast_text: Optional[str] = None
-            if analysis is not None and prefer_pdf_text:
-                if analysis.has_text and not analysis.is_full_page_image:
-                    # Merge exclusion regions: image regions from analysis + labels_to_exclude regions from detections
-                    # TODO: Pass settings through function arguments with correct types instead of using global settings
-                    excluded_label_detections = filter_detections(
-                        detections, settings.processing.labels_to_exclude
+            fast_text: str | None = None
+            if (
+                analysis is not None
+                and prefer_pdf_text
+                and analysis.has_text
+                and not analysis.is_full_page_image
+            ):
+                # Merge exclusion regions: image regions from analysis + labels_to_exclude regions from detections
+                # TODO: Pass settings through function arguments with correct types instead of using global settings
+                excluded_label_detections = filter_detections(
+                    detections, settings.processing.labels_to_exclude
+                )
+                excluded_bboxes = [
+                    (
+                        float(b[0]),
+                        float(b[1]),
+                        float(b[2]),
+                        float(b[3]),
                     )
-                    excluded_bboxes = [
-                        (
-                            float(b[0]),
-                            float(b[1]),
-                            float(b[2]),
-                            float(b[3]),
-                        )
-                        for b in (
-                            detection.bbox for detection in excluded_label_detections
-                        )
-                    ]
-                    combined_excludes = list(analysis.image_rects) + excluded_bboxes
+                    for b in (detection.bbox for detection in excluded_label_detections)
+                ]
+                combined_excludes = list(analysis.image_rects) + excluded_bboxes
 
-                    if combined_excludes:
-                        logger.debug(
-                            f"Excluding {len(combined_excludes)} regions from PDF text on page {idx + 1}"
-                        )
-                        fast_text = extract_pdf_text_excluding_regions(
-                            document_path, analysis.page_index, combined_excludes
-                        )
-                    else:
-                        fast_text = extract_pdf_page_text(
-                            document_path, analysis.page_index
-                        )
+                if combined_excludes:
+                    logger.debug(
+                        f"Excluding {len(combined_excludes)} regions from PDF text on page {idx + 1}"
+                    )
+                    fast_text = extract_pdf_text_excluding_regions(
+                        document_path, analysis.page_index, combined_excludes
+                    )
+                else:
+                    fast_text = extract_pdf_page_text(document_path, analysis.page_index)
 
-                    # TODO: Pass settings through function arguments with correct types instead of using global settings
-                    if (
-                        fast_text
-                        and len(fast_text)
-                        < settings.processing.pdf_text_threshold_chars
-                    ):
-                        fast_text = None
-                        logger.debug(
-                            f"Discarded short PDF text below threshold; will use OCR for page {idx + 1}"
-                        )
-                    else:
-                        length = 0 if fast_text is None else len(fast_text)
-                        logger.info(
-                            f"Using PDF-native text for page {idx + 1} (length={length})"
-                        )
+                # TODO: Pass settings through function arguments with correct types instead of using global settings
+                if fast_text and len(fast_text) < settings.processing.pdf_text_threshold_chars:
+                    fast_text = None
+                    logger.debug(
+                        f"Discarded short PDF text below threshold; will use OCR for page {idx + 1}"
+                    )
+                else:
+                    length = 0 if fast_text is None else len(fast_text)
+                    logger.info(f"Using PDF-native text for page {idx + 1} (length={length})")
 
             # TODO: Pass settings through function arguments with correct types instead of using global settings
             page_result = process_single_page(
@@ -192,12 +186,12 @@ def process_single_page(
     page_number: int,
     detector: Detector,
     summarizer: ChartSummarizer,
-    charts_labels: List[str],
-    labels_to_exclude_from_ocr: List[str],
+    charts_labels: list[str],
+    labels_to_exclude_from_ocr: list[str],
     ocr_lang: str,
-    pre_extracted_text: Optional[str] = None,
-    precomputed_detections: Optional[List[DetectionResult]] = None,
-) -> Dict[str, Any]:
+    pre_extracted_text: str | None = None,
+    precomputed_detections: list[DetectionResult] | None = None,
+) -> dict[str, Any]:
     """
     Process a single page image: detect elements, extract chart and text data.
 
@@ -242,12 +236,12 @@ def process_single_page(
 
 def process_chart_elements(
     image: np.ndarray,
-    chart_detections: List[DetectionResult],
+    chart_detections: list[DetectionResult],
     page_number: int,
     summarizer: ChartSummarizer,
-    prompt: Optional[str] = None,
-    extra_context: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    prompt: str | None = None,
+    extra_context: str | None = None,
+) -> list[dict[str, Any]]:
     """
     Process chart elements: crop, summarize, and return structured data.
 
@@ -270,18 +264,17 @@ def process_chart_elements(
 
     extracted_regions = extract_regions(
         image=image,
-        regions=[
-            cast(RectangleTuple, tuple(detection.bbox))
-            for detection in chart_detections
-        ],
+        regions=[cast(RectangleTuple, tuple(detection.bbox)) for detection in chart_detections],
     )
 
     if not extracted_regions:
         logger.warning("Failed to extract chart regions")
         return []
 
-    chart_elements: List[Dict[str, Any]] = []
-    for idx, (detection, region) in enumerate(zip(chart_detections, extracted_regions)):
+    chart_elements: list[dict[str, Any]] = []
+    for idx, (detection, region) in enumerate(
+        zip(chart_detections, extracted_regions, strict=False)
+    ):
         logger.debug(f"Summarizing chart {idx + 1}/{len(extracted_regions)}...")
         summary = summarizer.summarize_charts_from_page(
             image=region,
@@ -306,11 +299,11 @@ def process_chart_elements(
 
 def process_text_elements(
     image: np.ndarray,
-    excluded_bboxes: List[RectangleUnion],
+    excluded_bboxes: list[RectangleUnion],
     page_number: int,
     ocr_lang: str,
-    pre_extracted_text: Optional[str] = None,
-) -> List[Dict[str, Any]]:
+    pre_extracted_text: str | None = None,
+) -> list[dict[str, Any]]:
     """Process text content for a page.
 
     If ``pre_extracted_text`` is provided, it will be returned directly as a single text
@@ -332,9 +325,7 @@ def process_text_elements(
     if pre_extracted_text is not None and pre_extracted_text.strip():
         text = pre_extracted_text.strip()
         height, width = image.shape[:2]
-        logger.debug(
-            f"Using pre-extracted PDF text for page {page_number} (chars={len(text)})"
-        )
+        logger.debug(f"Using pre-extracted PDF text for page {page_number} (chars={len(text)})")
         return [
             {
                 "type": "text",
@@ -356,7 +347,7 @@ def process_text_elements(
         lang=ocr_lang,
     )
 
-    text_elements: List[Dict[str, Any]] = []
+    text_elements: list[dict[str, Any]] = []
     if text.strip():
         height, width = filled_image.shape[:2]
         text_elements.append(

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 class DetectionConfig:
     """
     Configuration for detection.
-    
+
     Attributes:
         imagesize (int): The size of the image to detect.
         confidence (float): The confidence threshold for the detection.

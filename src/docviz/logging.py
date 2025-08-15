@@ -6,17 +6,16 @@ This module provides a centralized logging setup.
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 from loguru import logger
 
 
 def setup_logging(
     log_level: str = "INFO",
-    log_file: Optional[Path] = None,
+    log_file: Path | None = None,
     rotation: str = "10 MB",
     retention: str = "7 days",
-    format_string: Optional[str] = None,
+    format_string: str | None = None,
 ) -> None:
     """
     Configure loguru logging with custom settings.

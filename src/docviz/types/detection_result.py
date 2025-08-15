@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import List
 
 
 @dataclass
@@ -17,5 +16,5 @@ class DetectionResult:
 
     label: int
     label_name: str
-    bbox: List[float]
+    bbox: list[float]
     confidence: float

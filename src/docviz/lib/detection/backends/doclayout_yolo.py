@@ -1,15 +1,13 @@
-from typing import List
 
+import numpy as np
 from doclayout_yolo import YOLOv10
 from doclayout_yolo.engine.results import Results
-import numpy as np
 
 from docviz.lib.detection.backends.base import BaseDetectionBackend
 from docviz.lib.detection.deduplication import remove_duplicates_nms
 from docviz.lib.detection.labels import CanonicalLabel
-from docviz.types import DetectionConfig, DetectionResult
 from docviz.logging import get_logger
-
+from docviz.types import DetectionConfig, DetectionResult
 
 logger = get_logger(__name__)
 
@@ -40,7 +38,7 @@ class DoclayoutYoloBackend(BaseDetectionBackend):
     def detect(
         self,
         image: np.ndarray,
-    ) -> List[DetectionResult]:
+    ) -> list[DetectionResult]:
         """
         Run document layout detection on an image.
 
@@ -55,30 +53,26 @@ class DoclayoutYoloBackend(BaseDetectionBackend):
         """
         logger.debug(f"Running layout detection on shape: {image.shape}")
 
-        results: List[Results] = self.model.predict(
+        results: list[Results] = self.model.predict(
             image,
             imgsz=self.imgsz,
             conf=self.conf,
             device=self.device,
         )
 
-        detections: List[DetectionResult] = []
+        detections: list[DetectionResult] = []
         for result in results:
             if hasattr(result, "boxes") and result.boxes is not None:
                 boxes = result.boxes
                 height, width = result.orig_shape
 
-            if not (
-                hasattr(boxes, "cls")
-                and hasattr(boxes, "conf")
-                and hasattr(boxes, "xyxyn")
-            ):
+            if not (hasattr(boxes, "cls") and hasattr(boxes, "conf") and hasattr(boxes, "xyxyn")):
                 continue
 
             for label, box, conf in zip(
                 boxes.cls.tolist(),
                 boxes.xyxyn.tolist(),
-                boxes.conf.tolist(),
+                boxes.conf.tolist(), strict=False,
             ):
                 label_idx = int(label)
                 bbox = [

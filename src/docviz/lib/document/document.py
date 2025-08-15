@@ -1,15 +1,8 @@
 from pathlib import Path
-import asyncio
 
-from ...types import (
-    ExtractionConfig,
-    DetectionConfig,
-    ExtractionResult,
-    ExtractionType,
-)
-from ..functions import extract_content, extract_content_sync
-from ...logging import get_logger
-
+from docviz.lib.functions import extract_content, extract_content_sync
+from docviz.logging import get_logger
+from docviz.types import DetectionConfig, ExtractionConfig, ExtractionResult, ExtractionType
 
 logger = get_logger(__name__)
 

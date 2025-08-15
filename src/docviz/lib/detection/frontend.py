@@ -1,4 +1,3 @@
-from typing import List
 
 import numpy as np
 
@@ -60,7 +59,7 @@ class Detector:
             return YoloDoclaynetBackend(self.model_path, settings)
         raise ValueError(f"Unsupported detection backend: {self.backend}")
 
-    def parse_layout(self, image: np.ndarray, **kwargs) -> List[DetectionResult]:
+    def parse_layout(self, image: np.ndarray, **kwargs) -> list[DetectionResult]:
         """
         Detect document layout objects in the given image.
 
@@ -79,7 +78,7 @@ class Detector:
             f"Detection backend {self.backend.__class__} does not implement 'detect' method."
         )
 
-    def get_possible_labels(self) -> List[str]:
+    def get_possible_labels(self) -> list[str]:
         """
         Get the possible labels for the current backend (canonicalized per-backend).
         """

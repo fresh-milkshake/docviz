@@ -1,14 +1,13 @@
 import base64
 import io
 import time
-from typing import Optional
 
 import numpy as np
-from PIL import Image
 from openai import OpenAI
+from PIL import Image
 
-from docviz.logging import get_logger
 from docviz.constants import DEFAULT_VISION_PROMPT
+from docviz.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -107,8 +106,8 @@ class ChartSummarizer:
     def summarize_charts_from_page(
         self,
         image: np.ndarray,
-        prompt: Optional[str] = None,
-        extra_context: Optional[str] = None,
+        prompt: str | None = None,
+        extra_context: str | None = None,
     ) -> str:
         """
         Summarize charts found in the given image using the vision model.
@@ -142,7 +141,7 @@ class ChartSummarizer:
             logger.error(f"Failed to convert numpy array to base64: {e}")
             raise RuntimeError(f"Image conversion failed: {e}") from e
 
-        last_exception: Optional[Exception] = None
+        last_exception: Exception | None = None
         for attempt in range(1, self.retries + 1):
             try:
                 logger.debug(
@@ -155,9 +154,7 @@ class ChartSummarizer:
                             {"type": "text", "text": prompt},
                             {
                                 "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/png;base64,{image_b64}"
-                                },
+                                "image_url": {"url": f"data:image/png;base64,{image_b64}"},
                             },
                         ],
                     }
@@ -177,9 +174,5 @@ class ChartSummarizer:
                     logger.debug(f"Retrying in {self.timeout} seconds...")
                     time.sleep(self.timeout)
 
-        logger.error(
-            f"Failed to summarize charts after {self.retries} attempts: {last_exception}"
-        )
-        raise RuntimeError(
-            f"Failed to summarize charts: {last_exception}"
-        ) from last_exception
+        logger.error(f"Failed to summarize charts after {self.retries} attempts: {last_exception}")
+        raise RuntimeError(f"Failed to summarize charts: {last_exception}") from last_exception
