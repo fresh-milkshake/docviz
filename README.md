@@ -1,5 +1,5 @@
 > [!Caution]
-> This project is in active development. The API is subject to change and breaking changes may occur. Package might not work until 1.5.0 release.
+> This project is in active development. The API is subject to change and breaking changes may occur. Package might not work until first stable release (1.0.0).
 
 
 <div align="left">
@@ -213,10 +213,3 @@ Supported output formats:
 ## 📄 License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
----
-
-<div align="center">
-  <p style="background-color:rgb(22, 22, 22); padding: 10px; border-radius: 10px;">Made with ❤️ by <a href="https://github.com/fresh-milkshake">fresh-milkshake</a></p>
-</div>
-
