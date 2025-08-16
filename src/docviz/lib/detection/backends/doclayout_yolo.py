@@ -1,4 +1,3 @@
-
 import numpy as np
 from doclayout_yolo import YOLOv10
 from doclayout_yolo.engine.results import Results
@@ -72,7 +71,8 @@ class DoclayoutYoloBackend(BaseDetectionBackend):
             for label, box, conf in zip(
                 boxes.cls.tolist(),
                 boxes.xyxyn.tolist(),
-                boxes.conf.tolist(), strict=False,
+                boxes.conf.tolist(),
+                strict=False,
             ):
                 label_idx = int(label)
                 bbox = [

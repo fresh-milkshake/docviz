@@ -11,7 +11,8 @@ async def main():
     extractions.save("results", save_format=docviz.SaveFormat.JSON)
 
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
 
 
 # # variant 1

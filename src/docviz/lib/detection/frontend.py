@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from docviz.lib.detection.backends import (
@@ -22,9 +21,7 @@ class Detector:
 
     def __init__(
         self,
-        backend: DetectionBackendEnum | str,
-        model_path: str,
-        settings: DetectionConfig,
+        config: DetectionConfig,
     ) -> None:
         """
         Initialize the Detector with the specified backend and model path.
@@ -34,12 +31,9 @@ class Detector:
             model_path (str): Path to the model file.
             settings (Settings): The settings for the backend.
         """
-        if isinstance(backend, str):
-            backend = DetectionBackendEnum(backend)
-
-        self.backend = backend
-        self.model_path = model_path
-        self.detector = self._create_detector(settings)
+        self.backend = config.layout_detection_backend
+        self.model_path = config.model_path
+        self.detector = self._create_detector(config)
 
     def _create_detector(
         self, settings: DetectionConfig

@@ -1,11 +1,11 @@
 [project]
 name = "docviz-python"
-version = "0.2.0"
+version = "0.4.0"
 description = "A Python library for extracting and analyzing content from any documents, supporting batch and selective extraction, custom configuration, and multiple output formats."
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "fresh-milkshake" }]
-license = { file = "LICENSE" }
+license = "MIT"
 keywords = [
     "pdf",
     "document analysis",
@@ -15,7 +15,6 @@ keywords = [
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
     "Topic :: Text Processing :: Linguistic",
@@ -30,11 +29,11 @@ dependencies = [
     "pymupdf>=1.26.3",
     "pytesseract>=0.3.13",
     "requests>=2.32.4",
+    "doclayout-yolo>=0.0.4",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "doclayout-yolo>=0.0.4",
     "huggingface-hub>=0.34.3",
     "jupyter>=1.1.1",
     "pyright>=1.1.403",

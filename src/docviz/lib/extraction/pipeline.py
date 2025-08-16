@@ -7,26 +7,43 @@ import cv2
 import numpy as np
 
 from docviz.lib.detection import Detector
-from docviz.lib.document import (
-    analyze_pdf,
-    extract_pdf_page_text,
-    extract_pdf_text_excluding_regions,
+from docviz.lib.extraction.utils import filter_detections
+from docviz.lib.image import ChartSummarizer, extract_regions, fill_regions_with_color
+from docviz.lib.pdf import (
+    # analyze_pdf,
+    # extract_pdf_page_text,
+    # extract_pdf_text_excluding_regions,
     extract_text_from_image,
     pdf_to_png,
 )
-from docviz.lib.extraction.utils import filter_detections
-from docviz.lib.image import ChartSummarizer, extract_regions, fill_regions_with_color
+from docviz.lib.pdf.pdf_analyzer import (
+    analyze_pdf,
+    extract_pdf_page_text,
+    extract_pdf_text_excluding_regions,
+)
 from docviz.logging import get_logger
-from docviz.types import DetectionResult, RectangleTuple, RectangleUnion
+from docviz.types import (
+    DetectionConfig,
+    DetectionResult,
+    ExtractionConfig,
+    ExtractionType,
+    LLMConfig,
+    OCRConfig,
+    RectangleTuple,
+    RectangleUnion,
+)
 
 logger = get_logger(__name__)
 
 
 def pipeline(
-    document_path: str,
-    model_path: str,
-    output_dir: str,
-    page_limit: int | None = None,
+    document_path: Path,
+    output_dir: Path,
+    detection_config: DetectionConfig,
+    extraction_config: ExtractionConfig,
+    ocr_config: OCRConfig,
+    llm_config: LLMConfig,
+    includes: list[ExtractionType],
 ) -> list[dict[str, Any]]:
     """
     Full pipeline: convert PDF to PNG, detect charts, extract text, and summarize.
@@ -43,9 +60,9 @@ def pipeline(
     logger.info("Starting document processing pipeline")
 
     # TODO: Pass settings through function arguments with correct types instead of using global settings
-    model_name = settings.vision.provider.model
-    base_url = settings.vision.provider.base_url
-    api_key = settings.vision.provider.api_key
+    model_name = llm_config.model
+    base_url = llm_config.base_url
+    api_key = llm_config.api_key
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
@@ -58,10 +75,10 @@ def pipeline(
         logger.info("Converting PDF to PNG images")
         # TODO: Pass settings through function arguments with correct types instead of using global settings
         image_paths = pdf_to_png(
-            pdf_path=document_path,
+            pdf_path=str(document_path),
             output_dir=str(temp_path),
-            zoom_x=settings.processing.zoom_factor,
-            zoom_y=settings.processing.zoom_factor,
+            zoom_x=extraction_config.zoom_x,
+            zoom_y=extraction_config.zoom_y,
         )
         logger.info(f"Converted PDF to {len(image_paths)} PNG images")
 
@@ -80,17 +97,15 @@ def pipeline(
         logger.info("Initializing detection and summarization models")
         # TODO: Pass settings through function arguments with correct types instead of using global settings
         detector = Detector(
-            backend=settings.layout_detection_backend,
-            model_path=model_path,
-            settings=settings,
+            config=detection_config,
         )
         # TODO: Pass settings through function arguments with correct types instead of using global settings
         summarizer = ChartSummarizer(
             model_name=model_name,
             base_url=base_url,
             api_key=api_key or "",
-            retries=settings.vision.retries,
-            timeout=settings.vision.timeout,
+            retries=3,
+            timeout=5,
         )
         logger.info("Models initialized successfully")
 
@@ -102,8 +117,10 @@ def pipeline(
                 logger.error(f"Could not load image at {img_path}")
                 raise FileNotFoundError(f"Could not load image at {img_path}")
 
-            if page_limit is not None and idx >= page_limit:
-                logger.info(f"Page limit of {page_limit} reached, stopping processing.")
+            if extraction_config.page_limit is not None and idx >= extraction_config.page_limit:
+                logger.info(
+                    f"Page limit of {extraction_config.page_limit} reached, stopping processing."
+                )
                 break
 
             logger.info(f"Processing page {idx + 1}/{len(image_paths)}")
@@ -113,7 +130,7 @@ def pipeline(
 
             analysis = page_analyses[idx]
             # TODO: Pass settings through function arguments with correct types instead of using global settings
-            prefer_pdf_text = settings.processing.prefer_pdf_text
+            prefer_pdf_text = extraction_config.prefer_pdf_text
             fast_text: str | None = None
             if (
                 analysis is not None
@@ -124,7 +141,7 @@ def pipeline(
                 # Merge exclusion regions: image regions from analysis + labels_to_exclude regions from detections
                 # TODO: Pass settings through function arguments with correct types instead of using global settings
                 excluded_label_detections = filter_detections(
-                    detections, settings.processing.labels_to_exclude
+                    detections, extraction_config.labels_to_exclude
                 )
                 excluded_bboxes = [
                     (
@@ -148,7 +165,7 @@ def pipeline(
                     fast_text = extract_pdf_page_text(document_path, analysis.page_index)
 
                 # TODO: Pass settings through function arguments with correct types instead of using global settings
-                if fast_text and len(fast_text) < settings.processing.pdf_text_threshold_chars:
+                if fast_text and len(fast_text) < extraction_config.pdf_text_threshold_chars:
                     fast_text = None
                     logger.debug(
                         f"Discarded short PDF text below threshold; will use OCR for page {idx + 1}"
@@ -163,9 +180,9 @@ def pipeline(
                 page_number=idx + 1,
                 detector=detector,
                 summarizer=summarizer,
-                ocr_lang=settings.processing.ocr_lang,
-                charts_labels=settings.filtration.chart_labels,
-                labels_to_exclude_from_ocr=settings.processing.labels_to_exclude,
+                ocr_lang=ocr_config.lang,
+                charts_labels=ocr_config.chart_labels,
+                labels_to_exclude_from_ocr=ocr_config.labels_to_exclude,
                 pre_extracted_text=fast_text,
                 precomputed_detections=detections,
             )

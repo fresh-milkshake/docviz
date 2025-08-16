@@ -1,5 +1,4 @@
 import asyncio
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -7,20 +6,18 @@ from pathlib import Path
 import requests
 from tqdm import tqdm
 
+from docviz.constants import (
+    BASE_MODELS_URL,
+    MODELS_PATH,
+    REQUIRED_MODELS,
+    TESSERACT_DEFAULT_PATH,
+    TESSERACT_SETUP_FILENAME,
+    TESSERACT_SETUP_URL,
+    get_docviz_directory,
+)
 from docviz.logging import get_logger
 
 logger = get_logger(__name__)
-
-# Constants
-TESSERACT_DEFAULT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-TESSERACT_SETUP_URL = "https://github.com/tesseract-ocr/tesseract/releases/download/5.5.0/tesseract-ocr-w64-setup-5.5.0.20241111.exe"
-TESSERACT_SETUP_FILENAME = "tesseract-ocr-w64-setup-5.5.0.20241111.exe"
-BASE_MODELS_URL = "https://github.com/privateai-com/docviz/raw/main/models"
-REQUIRED_MODELS = [
-    "doclayout_yolo_docstructbench_imgsz1024.pt",
-    "yolov12l-doclaynet.pt",
-    "yolov12m-doclaynet.pt",
-]
 
 
 async def download_file(url: str, path: Path, chunk_size: int = 8192) -> None:
@@ -71,19 +68,7 @@ async def download_file(url: str, path: Path, chunk_size: int = 8192) -> None:
         raise
 
 
-def get_docviz_directory() -> Path:
-    """Get the docviz configuration directory.
-
-    Returns:
-        Path to the docviz directory.
-    """
-    user_profile = os.getenv("USERPROFILE")
-    if not user_profile:
-        raise RuntimeError("USERPROFILE environment variable not found")
-    return Path(user_profile) / ".docviz"
-
-
-def find_tesseract_executable() -> str | None:
+def find_tesseract_executable() -> Path | None:
     """Find the Tesseract executable on the system.
 
     Returns:
@@ -96,20 +81,18 @@ def find_tesseract_executable() -> str | None:
         r"C:\Tesseract-OCR\tesseract.exe",
     ]
 
-    # Check if tesseract is in PATH
-    try:
-        result = subprocess.run(
-            ["tesseract", "--version"], capture_output=True, text=True, timeout=5
-        )
-        if result.returncode == 0:
-            return "tesseract"
-    except (subprocess.TimeoutExpired, FileNotFoundError):
-        pass
+    # Check if tesseract is in PATH using shutil.which
+    import shutil
+
+    tesseract_path = shutil.which("tesseract")
+    if tesseract_path:
+        return Path(tesseract_path)
 
     # Check common installation paths
     for path in possible_paths:
-        if Path(path).exists():
-            return path
+        p = Path(path)  
+        if p.exists():
+            return p
 
     return None
 
@@ -170,7 +153,8 @@ def test_tesseract_installation() -> None:
             raise RuntimeError("Tesseract executable not found")
 
         # Set the path
-        pytesseract.pytesseract.tesseract_cmd = tesseract_path
+        print(tesseract_path.as_posix()) # TODO: debug adequate way to set tesseract_cmd
+        # pytesseract.pytesseract.tesseract_cmd = tesseract_path.as_posix()
 
         # Test with a simple image if available
         test_image_path = (
@@ -247,8 +231,7 @@ async def check_dependencies() -> None:
             await install_tesseract(docviz_dir)
 
         # Ensure models are available
-        models_dir = docviz_dir / "models"
-        await ensure_models_available(models_dir)
+        await ensure_models_available(MODELS_PATH)
 
         logger.info("All dependencies are ready")
 

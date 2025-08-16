@@ -13,5 +13,6 @@ class ExtractionType(enum.Enum):
     def __str__(self):
         return self.value
 
-    def get_all(self):
+    @classmethod
+    def get_all(cls):
         return list(ExtractionType)

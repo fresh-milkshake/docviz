@@ -1,4 +1,3 @@
-
 import numpy as np
 from ultralytics import YOLO
 
@@ -60,7 +59,8 @@ class YoloDoclaynetBackend(BaseDetectionBackend):
         for label, box, conf in zip(
             result.boxes.cls.tolist(),
             result.boxes.xyxyn.tolist(),
-            result.boxes.conf.tolist(), strict=False,
+            result.boxes.conf.tolist(),
+            strict=False,
         ):
             label_idx = int(label)
             bbox = [
