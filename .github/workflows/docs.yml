@@ -1,0 +1,59 @@
+name: Deploy to GitHub Pages
+
+on:
+  # push:
+  #   branches:
+  #     - master
+  #   paths:
+  #     - 'docs/**'
+  #     - 'src/**'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+env:
+  BUILD_DIR: docs/_build/html
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build Sphinx HTML
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup uv and Python
+        uses: astral-sh/setup-uv@v4
+        with:
+          python-version: '3.13'
+
+      - name: Sync dependencies (dev)
+        run: uv sync --all-extras
+
+      - name: Build Sphinx HTML
+        run: uv run sphinx-build -b html docs ${{ env.BUILD_DIR }}
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload static site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.BUILD_DIR }}
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
+
