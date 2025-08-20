@@ -1,6 +1,7 @@
 from .aliases import Color, RectangleTuple, RectangleUnion
 from .detection_config import DetectionConfig
 from .detection_result import DetectionResult
+from .extraction_chunk import ExtractionChunk
 from .extraction_config import ExtractionConfig
 from .extraction_result import ExtractionEntry, ExtractionResult
 from .extraction_type import ExtractionType
@@ -12,6 +13,7 @@ __all__ = [
     "Color",
     "DetectionConfig",
     "DetectionResult",
+    "ExtractionChunk",
     "ExtractionConfig",
     "ExtractionEntry",
     "ExtractionResult",

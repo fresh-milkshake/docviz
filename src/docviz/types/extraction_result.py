@@ -109,3 +109,41 @@ class ExtractionResult:
                 raise ValueError(f"Unsupported save format: {format}")
 
         logger.info(f"Saving extraction result to {file_path}")
+
+    def to_dict(self) -> dict:
+        """Convert the extraction result to a dictionary.
+
+        Returns:
+            dict: Dictionary representation of the extraction result.
+        """
+        return {
+            "entries": [
+                {
+                    "text": entry.text,
+                    "class": entry.class_,
+                    "confidence": entry.confidence,
+                    "bbox": entry.bbox,
+                    "page_number": entry.page_number,
+                }
+                for entry in self.entries
+            ]
+        }
+
+    def to_dataframe(self) -> pd.DataFrame:
+        """Convert the extraction result to a pandas DataFrame.
+
+        Returns:
+            pd.DataFrame: DataFrame representation of the extraction result.
+        """
+        data = []
+        for entry in self.entries:
+            data.append(
+                {
+                    "text": entry.text,
+                    "type": entry.class_,  # Using 'type' instead of 'class' for DataFrame
+                    "confidence": entry.confidence,
+                    "bbox": entry.bbox,
+                    "page_number": entry.page_number,
+                }
+            )
+        return pd.DataFrame(data)

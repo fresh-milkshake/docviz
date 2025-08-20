@@ -90,7 +90,7 @@ def find_tesseract_executable() -> Path | None:
 
     # Check common installation paths
     for path in possible_paths:
-        p = Path(path)  
+        p = Path(path)
         if p.exists():
             return p
 
@@ -153,7 +153,7 @@ def test_tesseract_installation() -> None:
             raise RuntimeError("Tesseract executable not found")
 
         # Set the path
-        print(tesseract_path.as_posix()) # TODO: debug adequate way to set tesseract_cmd
+        print(tesseract_path.as_posix())  # TODO: debug adequate way to set tesseract_cmd
         # pytesseract.pytesseract.tesseract_cmd = tesseract_path.as_posix()
 
         # Test with a simple image if available

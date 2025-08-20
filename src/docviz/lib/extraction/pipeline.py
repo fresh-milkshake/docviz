@@ -59,21 +59,17 @@ def pipeline(
     """
     logger.info("Starting document processing pipeline")
 
-    # TODO: Pass settings through function arguments with correct types instead of using global settings
     model_name = llm_config.model
     base_url = llm_config.base_url
     api_key = llm_config.api_key
 
     Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-    # Create temporary directory for intermediate data
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         logger.debug(f"Created temporary directory: {temp_path}")
 
-        # Convert PDF to PNG in temporary directory (needed for image regions and OCR fallback)
         logger.info("Converting PDF to PNG images")
-        # TODO: Pass settings through function arguments with correct types instead of using global settings
         image_paths = pdf_to_png(
             pdf_path=str(document_path),
             output_dir=str(temp_path),
@@ -82,7 +78,6 @@ def pipeline(
         )
         logger.info(f"Converted PDF to {len(image_paths)} PNG images")
 
-        # Optionally analyze PDF pages to detect native text and image regions
         logger.info("Analyzing PDF pages for native text and images")
         try:
             page_analyses = analyze_pdf(document_path)
@@ -95,11 +90,9 @@ def pipeline(
 
         # Initialize models
         logger.info("Initializing detection and summarization models")
-        # TODO: Pass settings through function arguments with correct types instead of using global settings
         detector = Detector(
             config=detection_config,
         )
-        # TODO: Pass settings through function arguments with correct types instead of using global settings
         summarizer = ChartSummarizer(
             model_name=model_name,
             base_url=base_url,
@@ -129,7 +122,6 @@ def pipeline(
             detections = detector.parse_layout(img)
 
             analysis = page_analyses[idx]
-            # TODO: Pass settings through function arguments with correct types instead of using global settings
             prefer_pdf_text = extraction_config.prefer_pdf_text
             fast_text: str | None = None
             if (
@@ -139,7 +131,6 @@ def pipeline(
                 and not analysis.is_full_page_image
             ):
                 # Merge exclusion regions: image regions from analysis + labels_to_exclude regions from detections
-                # TODO: Pass settings through function arguments with correct types instead of using global settings
                 excluded_label_detections = filter_detections(
                     detections, extraction_config.labels_to_exclude
                 )
@@ -164,7 +155,6 @@ def pipeline(
                 else:
                     fast_text = extract_pdf_page_text(document_path, analysis.page_index)
 
-                # TODO: Pass settings through function arguments with correct types instead of using global settings
                 if fast_text and len(fast_text) < extraction_config.pdf_text_threshold_chars:
                     fast_text = None
                     logger.debug(
@@ -174,7 +164,6 @@ def pipeline(
                     length = 0 if fast_text is None else len(fast_text)
                     logger.info(f"Using PDF-native text for page {idx + 1} (length={length})")
 
-            # TODO: Pass settings through function arguments with correct types instead of using global settings
             page_result = process_single_page(
                 image=img,
                 page_number=idx + 1,

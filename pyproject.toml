@@ -22,6 +22,8 @@ classifiers = [
 ]
 dependencies = [
     "click>=8.2.1",
+    "doclayout-yolo>=0.0.4",
+    "huggingface-hub>=0.34.3",
     "loguru>=0.7.3",
     "openai>=1.98.0",
     "opencv-python>=4.12.0.88",
@@ -29,12 +31,11 @@ dependencies = [
     "pymupdf>=1.26.3",
     "pytesseract>=0.3.13",
     "requests>=2.32.4",
-    "doclayout-yolo>=0.0.4",
+    "ultralytics>=8.3.174",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "huggingface-hub>=0.34.3",
     "jupyter>=1.1.1",
     "pyright>=1.1.403",
     "ruff>=0.12.7",
