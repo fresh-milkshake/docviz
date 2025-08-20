@@ -31,6 +31,8 @@ dependencies = [
     "pymupdf>=1.26.3",
     "pytesseract>=0.3.13",
     "requests>=2.32.4",
+    "rich>=14.1.0",
+    "rich-argparse>=1.7.1",
     "ultralytics>=8.3.174",
 ]
 
@@ -45,6 +47,14 @@ showcase = [
     "seaborn>=0.13.2", 
     "ultralytics>=8.3.174"
 ]
+cli = [
+    "click>=8.2.1",
+    "rich>=13.7.0",
+    "rich-argparse>=0.3.0",
+]
+
+[project.scripts]
+docviz = "docviz.cli.__main__:cli"
 
 [tool.ruff]
 line-length = 100

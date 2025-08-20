@@ -57,6 +57,7 @@ class DoclayoutYoloBackend(BaseDetectionBackend):
             imgsz=self.imgsz,
             conf=self.conf,
             device=self.device,
+            verbose=False,
         )
 
         detections: list[DetectionResult] = []

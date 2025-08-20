@@ -52,7 +52,7 @@ class YoloDoclaynetBackend(BaseDetectionBackend):
         """
         logger.debug(f"Running layout detection on shape: {image.shape}")
 
-        result = self.model(image)[0]
+        result = self.model(image, verbose=False)[0]
         height, width = image.shape[:2]
 
         detections: list[DetectionResult] = []

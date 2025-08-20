@@ -1,14 +1,19 @@
+import asyncio
+import concurrent.futures
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from docviz.constants import MODELS_PATH
 from docviz.lib.detection.backends import DetectionBackendEnum
 from docviz.lib.detection.labels import CanonicalLabel
 from docviz.lib.extraction import pipeline
+from docviz.logging import get_logger
 from docviz.types import (
     DetectionConfig,
     ExtractionConfig,
+    ExtractionEntry,
     ExtractionResult,
     ExtractionType,
     LLMConfig,
@@ -17,6 +22,51 @@ from docviz.types import (
 
 if TYPE_CHECKING:
     from .document import Document
+
+
+logger = get_logger(__name__)
+
+
+def _convert_pipeline_results_to_extraction_result(
+    pipeline_results: list[dict[str, Any]],
+) -> ExtractionResult:
+    """Convert pipeline results to ExtractionResult format.
+
+    Args:
+        pipeline_results: List of page results from pipeline function.
+
+    Returns:
+        ExtractionResult with converted entries.
+    """
+    entries = []
+
+    for page_result in pipeline_results:
+        page_number = page_result.get("page_number", 1)
+        elements = page_result.get("elements", [])
+
+        for element in elements:
+            # Map element types to canonical names
+            element_type = element.get("type", "other")
+            if element_type == "chart":
+                element_type = "figure"
+            elif element_type == "formula":
+                element_type = "equation"
+
+            # Extract bbox and ensure it's a list
+            bbox = element.get("bbox", [])
+            if isinstance(bbox, tuple):
+                bbox = list(bbox)
+
+            entry = ExtractionEntry(
+                text=element.get("text", ""),
+                class_=element_type,
+                confidence=element.get("confidence", 1.0),
+                bbox=bbox,
+                page_number=page_number,
+            )
+            entries.append(entry)
+
+    return ExtractionResult(entries=entries)
 
 
 def batch_extract(
@@ -96,17 +146,21 @@ async def extract_content(
     if ExtractionType.ALL in includes:
         includes = ExtractionType.get_all()
 
-    # TODO: Implement actual async pipeline
-    # For now, call the sync version
-    return extract_content_sync(
-        document,
-        extraction_config,
-        detection_config,
-        includes,
-        progress_callback,
-        ocr_config,
-        llm_config,
-    )
+    # Run the sync pipeline in an executor for async behavior
+    def _run_sync_pipeline():
+        return extract_content_sync(
+            document,
+            extraction_config,
+            detection_config,
+            includes,
+            progress_callback,
+            ocr_config,
+            llm_config,
+        )
+
+    loop = asyncio.get_event_loop()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        return await loop.run_in_executor(executor, _run_sync_pipeline)
 
 
 def extract_content_sync(
@@ -166,28 +220,27 @@ def extract_content_sync(
     if includes is None:
         includes = ExtractionType.get_all()
 
-    # Handle ExtractionType.ALL
+        # Handle ExtractionType.ALL
     if ExtractionType.ALL in includes:
         includes = ExtractionType.get_all()
 
-    # TODO: Replace with actual pipeline call when ready
-    # For now, return empty result as placeholder
     try:
-        _results = pipeline(
-            document_path=document.file_path,
-            output_dir=Path("output"),
-            detection_config=detection_config,
-            extraction_config=extraction_config,
-            ocr_config=ocr_config,
-            llm_config=llm_config,
-            includes=includes,
-        )
+        # Create temporary output directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            pipeline_results = pipeline(
+                document_path=document.file_path,
+                output_dir=Path(temp_dir),
+                detection_config=detection_config,
+                extraction_config=extraction_config,
+                ocr_config=ocr_config,
+                llm_config=llm_config,
+                includes=includes,
+            )
 
-        # TODO: Convert pipeline results to ExtractionResult
-        # This is a placeholder - actual implementation depends on pipeline return format
-        return ExtractionResult(entries=[])
+        # Convert pipeline results to ExtractionResult
+        return _convert_pipeline_results_to_extraction_result(pipeline_results)
 
     except Exception as e:
-        # Log error and return empty result for now
-        print(f"Pipeline execution failed: {e}")
+        # Log error and return empty result
+        logger.error(f"Pipeline execution failed: {e}")
         return ExtractionResult(entries=[])

@@ -63,8 +63,8 @@ class ExtractionResult:
             file_path (str | Path): The path to the file to save the result to without extension.
         """
 
-        df = pd.DataFrame(self.entries)
-        df.to_excel(f"{file_path}.xlsx", index=False)
+        dataframe = pd.DataFrame(self.entries)
+        dataframe.to_excel(f"{file_path}.xlsx", index=False)
 
     def to_xml(self, file_path: str | Path):
         """Save the extraction result to an XML file.
