@@ -57,8 +57,13 @@ def _convert_pipeline_results_to_extraction_result(
             if isinstance(bbox, tuple):
                 bbox = list(bbox)
 
+            # For chart elements, use summary as text
+            text_content = element.get("text", "")
+            if element_type == "figure" and "summary" in element:
+                text_content = element.get("summary", "")
+            
             entry = ExtractionEntry(
-                text=element.get("text", ""),
+                text=text_content,
                 class_=element_type,
                 confidence=element.get("confidence", 1.0),
                 bbox=bbox,

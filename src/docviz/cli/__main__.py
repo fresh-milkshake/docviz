@@ -32,10 +32,17 @@ def print_banner():
 
 
 def validate_file_path(ctx, param, value):
-    """Validate that the file path exists."""
+    """Validate that the file path exists or is a valid URL."""
     if value is None:
         return value
 
+    # Check if it's a URL
+    from docviz.lib.document.utils import is_url
+
+    if is_url(value):
+        return value
+
+    # Check if it's a local file
     path = Path(value)
     if not path.exists():
         raise click.BadParameter(f"File does not exist: {value}")
@@ -89,7 +96,7 @@ def cli(verbose):
 
 
 @cli.command()
-@click.argument("file_path", callback=validate_file_path)
+@click.argument("file_path", callback=validate_file_path, help="Path to document file or URL")
 @click.option("--output", "-o", type=click.Path(), help="Output file path")
 @click.option(
     "--format", "-f", callback=validate_output_format, help="Output format (json, csv, excel, xml)"
@@ -105,7 +112,7 @@ def cli(verbose):
 @click.option("--device", default="cpu", help="Device to use for detection (cpu, cuda)")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 def extract(file_path, output, format, types, confidence, device, verbose):
-    """Extract content from a single document."""
+    """Extract content from a single document (local file or URL)."""
     print_banner()
 
     with console.status("[bold green]Processing document...", spinner="dots"):

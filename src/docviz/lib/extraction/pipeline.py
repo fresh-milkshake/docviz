@@ -299,7 +299,7 @@ def process_chart_elements(
             }
         )
 
-    logger.info(f"Successfully processed {len(chart_elements)} chart elements")
+    logger.info(f"Successfully processed {len(chart_elements)} chart element(-s)")
     return chart_elements
 
 
@@ -367,5 +367,5 @@ def process_text_elements(
     else:
         logger.info("No text extracted from processed image")
 
-    logger.info(f"Successfully processed {len(text_elements)} text elements")
+    logger.info(f"Successfully processed {len(text_elements)} text element(-s)")
     return text_elements

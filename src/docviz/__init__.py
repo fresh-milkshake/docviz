@@ -3,7 +3,7 @@ import threading
 from pathlib import Path
 
 from .environment import check_dependencies
-from .lib.document import Document
+from .lib.document.class_ import Document
 from .lib.functions import batch_extract, extract_content, extract_content_sync
 from .types import (
     DetectionConfig,
@@ -12,6 +12,7 @@ from .types import (
     ExtractionEntry,
     ExtractionResult,
     ExtractionType,
+    LLMConfig,
     SaveFormat,
 )
 
@@ -72,6 +73,7 @@ __all__ = [
     "ExtractionEntry",
     "ExtractionResult",
     "ExtractionType",
+    "LLMConfig",
     "SaveFormat",
     "batch_extract",
     "extract_content",

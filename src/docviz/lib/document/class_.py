@@ -1,8 +1,8 @@
 from collections.abc import Callable, Iterator
-from pathlib import Path
 
 import fitz  # PyMuPDF
 
+from docviz.lib.document.utils import resolve_path_or_url
 from docviz.lib.functions import extract_content, extract_content_sync
 from docviz.logging import get_logger
 from docviz.types import (
@@ -11,6 +11,7 @@ from docviz.types import (
     ExtractionConfig,
     ExtractionResult,
     ExtractionType,
+    LLMConfig,
 )
 
 logger = get_logger(__name__)
@@ -21,14 +22,34 @@ class Document:
         self,
         file_path: str,
         config: ExtractionConfig | None = None,
+        filename: str | None = None,
     ):
-        self.file_path = Path(file_path)
+        self.file_path = resolve_path_or_url(file_path, filename)
         self.config = config or ExtractionConfig()
-        if not self.file_path.exists():
-            raise FileNotFoundError(f"File {self.file_path} does not exist")
-
-        # Cache the page count for performance
         self._page_count = None
+        self.name = self.file_path.stem
+
+    @classmethod
+    async def from_url(
+        cls,
+        url: str,
+        config: ExtractionConfig | None = None,
+        filename: str | None = None,
+    ) -> "Document":
+        """Create a Document instance from a URL.
+
+        Args:
+            url: URL to download the document from
+            config: Configuration for extraction
+            filename: Optional filename for the downloaded file
+
+        Returns:
+            Document instance with the downloaded file
+        """
+        from docviz.lib.document.utils import resolve_path_or_url_async
+
+        file_path = await resolve_path_or_url_async(url, filename)
+        return cls(str(file_path), config)
 
     @property
     def page_count(self) -> int:
@@ -48,12 +69,17 @@ class Document:
         detection_config: DetectionConfig | None = None,
         includes: list[ExtractionType] | None = None,
         progress_callback: Callable[[int], None] | None = None,
+        llm_config: LLMConfig | None = None,
     ) -> ExtractionResult:
-        # Use the document's config if no extraction_config is provided
         if extraction_config is None:
             extraction_config = self.config
         return await extract_content(
-            self, extraction_config, detection_config, includes, progress_callback
+            document=self,
+            extraction_config=extraction_config,
+            detection_config=detection_config,
+            includes=includes,
+            progress_callback=progress_callback,
+            llm_config=llm_config,
         )
 
     def extract_content_sync(
@@ -62,12 +88,18 @@ class Document:
         detection_config: DetectionConfig | None = None,
         includes: list[ExtractionType] | None = None,
         progress_callback: Callable[[int], None] | None = None,
+        llm_config: LLMConfig | None = None,
     ) -> ExtractionResult:
         # Use the document's config if no extraction_config is provided
         if extraction_config is None:
             extraction_config = self.config
         return extract_content_sync(
-            self, extraction_config, detection_config, includes, progress_callback
+            document=self,
+            extraction_config=extraction_config,
+            detection_config=detection_config,
+            includes=includes,
+            progress_callback=progress_callback,
+            llm_config=llm_config,
         )
 
     def extract_streaming(
@@ -76,6 +108,7 @@ class Document:
         extraction_config: ExtractionConfig | None = None,
         detection_config: DetectionConfig | None = None,
         includes: list[ExtractionType] | None = None,
+        llm_config: LLMConfig | None = None,
     ) -> Iterator[ExtractionChunk]:
         """Extract content in chunks for memory-efficient processing.
 
@@ -110,7 +143,13 @@ class Document:
             )
 
             # Extract content for this chunk
-            chunk_result = extract_content_sync(self, chunk_config, detection_config, includes)
+            chunk_result = extract_content_sync(
+                document=self,
+                extraction_config=chunk_config,
+                detection_config=detection_config,
+                includes=includes,
+                llm_config=llm_config,
+            )
 
             yield ExtractionChunk(
                 result=chunk_result,

@@ -42,7 +42,7 @@ class ExtractionResult:
             file_path (str | Path): The path to the file to save the result to without extension.
         """
         with open(f"{file_path}.json", "w") as f:
-            json.dump(self.entries, f, indent=4)
+            json.dump(self.to_dict(), f, indent=4)
 
     def to_csv(self, file_path: str | Path):
         """Save the extraction result to a CSV file.

@@ -1,5 +1,5 @@
 > [!Caution]
-> This project is in active development. The API is subject to change and breaking changes may occur. Package might not work until first stable release (1.0.0).
+> This project is in active development. The API is subject to change and breaking changes may occur. Package may not work until first stable release (1.0.0).
 
 
 <div align="left">

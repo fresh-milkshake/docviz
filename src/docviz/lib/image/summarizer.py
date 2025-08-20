@@ -3,12 +3,14 @@ import io
 import time
 
 import numpy as np
+from dotenv import load_dotenv
 from openai import OpenAI
 from PIL import Image
 
 from docviz.constants import DEFAULT_VISION_PROMPT
 from docviz.logging import get_logger
 
+load_dotenv(override=True)
 logger = get_logger(__name__)
 
 

@@ -25,7 +25,7 @@ def fill_regions_with_color(
         draw = ImageDraw.Draw(img)
         for rect in regions:
             draw.rectangle(rect, fill=color)
-        logger.info(f"Filled {len(regions)} regions in '{image.shape}'.")
+        logger.info(f"Filled {len(regions)} region(-s) in '{image.shape}'.")
         return np.array(img)
     except Exception as exc:
         logger.error(f"Failed to fill regions in image '{image.shape}': {exc}")
