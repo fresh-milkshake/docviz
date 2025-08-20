@@ -1,6 +1,6 @@
 [project]
 name = "docviz-python"
-version = "0.4.0"
+version = "0.5.0"
 description = "A Python library for extracting and analyzing content from any documents, supporting batch and selective extraction, custom configuration, and multiple output formats."
 readme = "README.md"
 requires-python = ">=3.10"
