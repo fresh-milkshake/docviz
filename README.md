@@ -3,11 +3,11 @@
 
 
 <div align="left">
-  <img src="https://raw.githubusercontent.com/fresh-milkshake/docviz/refs/heads/main/assets/header_long.svg" alt="docviz" width="100%">
+  <img src="https://raw.githubusercontent.com/privateai-com/docviz/refs/heads/main/assets/header_long.svg" alt="docviz" width="100%">
   
   [![python](https://img.shields.io/badge/python-3.10+-141414.svg?logo=python&logoColor=white)](https://www.python.org/)
   [![version](https://img.shields.io/pypi/v/docviz-python?color=141414&label=version&logo=pypi&logoColor=white)](https://pypi.org/project/docviz-python/)
-  [![License](https://img.shields.io/badge/License-MIT-141414.svg?logo=open-source-initiative&logoColor=white)](https://github.com/fresh-milkshake/docviz/blob/main/LICENSE)
+  [![License](https://img.shields.io/badge/License-MIT-141414.svg?logo=open-source-initiative&logoColor=white)](https://github.com/privateai-com/docviz/blob/main/LICENSE)
   [![Ruff](https://img.shields.io/badge/linter-ruff-141414.svg?logo=ruff&logoColor=white)](https://github.com/astral-sh/ruff)
   [![uv](https://img.shields.io/badge/package_manager-uv-141414.svg?logo=uv&logoColor=white)](https://docs.astral.sh/uv/)
 </div>
