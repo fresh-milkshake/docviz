@@ -35,9 +35,9 @@ If the image is not a chart, diagram, or data visualization, please clearly stat
 """
 
 
-TESSERACT_DEFAULT_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-TESSERACT_SETUP_URL = "https://github.com/tesseract-ocr/tesseract/releases/download/5.5.0/tesseract-ocr-w64-setup-5.5.0.20241111.exe"
-TESSERACT_SETUP_FILENAME = "tesseract-ocr-w64-setup-5.5.0.20241111.exe"
+TESSERACT_DEFAULT_WIN_PATH = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+TESSERACT_WIN_SETUP_URL = "https://github.com/tesseract-ocr/tesseract/releases/download/5.5.0/tesseract-ocr-w64-setup-5.5.0.20241111.exe"
+TESSERACT_WIN_SETUP_FILENAME = "tesseract-ocr-w64-setup-5.5.0.20241111.exe"
 BASE_MODELS_URL = "https://github.com/privateai-com/docviz/raw/main/models"
 REQUIRED_MODELS = [
     "doclayout_yolo_docstructbench_imgsz1024.pt",

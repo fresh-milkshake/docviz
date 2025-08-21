@@ -23,6 +23,28 @@ logger = get_logger(__name__)
 
 
 class Document:
+    """
+    A class representing a document.
+
+    Attributes:
+        file_path: The path to the document.
+        config: The configuration for the document.
+
+    Methods:
+        extract_content: Extract content from the document.
+        extract_content_sync: Extract content from the document synchronously.
+        extract_streaming: Extract content from the document asynchronously.
+        extract_streaming_sync: Extract content from the document synchronously.
+        extract_chunked: Extract content from the document in chunks.
+
+    Properties:
+        page_count: The number of pages in the document.
+        name: The name of the document.
+
+    Class Methods:
+        from_url: Create a Document instance from a URL.
+    """
+
     def __init__(
         self,
         file_path: str,
@@ -161,7 +183,6 @@ class Document:
         Yields:
             ExtractionResult: Extraction result for each processed page
         """
-        # Use the document's config if no extraction_config is provided
         if extraction_config is None:
             extraction_config = self.config
 

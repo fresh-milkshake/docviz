@@ -175,7 +175,7 @@ TODO: create docs static site
 
 ### Examples
 
-- [Basic Usage](https://github.com/fresh-milkshake/docviz/blob/main/example_usage.py) with 3 different approaches: simple, passing url to document, streaming example and custom configuration using OpenAI key.
+- [Basic Usage](https://github.com/privateai-com/docviz/blob/main/src/example_usage.py) with 3 different approaches: simple, passing url to document, streaming example and custom configuration using OpenAI key.
 
 ## 📝 Contributing
 

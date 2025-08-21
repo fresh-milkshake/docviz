@@ -10,9 +10,9 @@ from docviz.constants import (
     BASE_MODELS_URL,
     MODELS_PATH,
     REQUIRED_MODELS,
-    TESSERACT_DEFAULT_PATH,
-    TESSERACT_SETUP_FILENAME,
-    TESSERACT_SETUP_URL,
+    TESSERACT_DEFAULT_WIN_PATH,
+    TESSERACT_WIN_SETUP_FILENAME,
+    TESSERACT_WIN_SETUP_URL,
     get_docviz_directory,
 )
 from docviz.logging import get_logger
@@ -76,7 +76,7 @@ def find_tesseract_executable() -> Path | None:
     """
     # Common installation paths
     possible_paths = [
-        TESSERACT_DEFAULT_PATH,
+        TESSERACT_DEFAULT_WIN_PATH,
         r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
         r"C:\Tesseract-OCR\tesseract.exe",
     ]
@@ -105,12 +105,12 @@ async def install_tesseract(docviz_dir: Path) -> None:
     """
     logger.info("Tesseract not found. Starting installation process...")
 
-    setup_path = docviz_dir / TESSERACT_SETUP_FILENAME
+    setup_path = docviz_dir / TESSERACT_WIN_SETUP_FILENAME
 
     try:
         if not setup_path.exists():
             logger.info("Downloading Tesseract installer...")
-            await download_file(TESSERACT_SETUP_URL, setup_path)
+            await download_file(TESSERACT_WIN_SETUP_URL, setup_path)
 
         logger.info("Launching Tesseract installer...")
         logger.info(
