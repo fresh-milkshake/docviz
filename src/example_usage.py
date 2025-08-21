@@ -1,8 +1,11 @@
 import asyncio
+import logging
 import os
 
 import docviz
-from docviz.types.llm_config import LLMConfig
+from docviz.types import LLMConfig
+
+logging.basicConfig(level=logging.DEBUG)
 
 
 async def simple_example():
@@ -44,8 +47,8 @@ async def openai_example():
 
 async def main():
     # await simple_example()
-    # await url_example()
-    await openai_example()
+    await url_example()
+    # await openai_example()
 
 
 if __name__ == "__main__":

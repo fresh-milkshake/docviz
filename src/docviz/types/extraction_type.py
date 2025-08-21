@@ -1,5 +1,7 @@
 import enum
 
+from docviz.lib.detection.labels import CanonicalLabel
+
 
 class ExtractionType(enum.Enum):
     """
@@ -11,7 +13,6 @@ class ExtractionType(enum.Enum):
         TEXT: Extract text.
         FIGURE: Extract figures.
         EQUATION: Extract equations.
-        CODE: Extract code.
         OTHER: Extract other content.
     """
 
@@ -20,7 +21,6 @@ class ExtractionType(enum.Enum):
     TEXT = "text"
     FIGURE = "figure"
     EQUATION = "equation"
-    CODE = "code"
     OTHER = "other"
 
     def __str__(self):
@@ -29,3 +29,12 @@ class ExtractionType(enum.Enum):
     @classmethod
     def get_all(cls):
         return [t for t in ExtractionType if t != ExtractionType.ALL]
+
+    def to_canonical_label(self) -> str:
+        return {
+            ExtractionType.TABLE: CanonicalLabel.TABLE.value,
+            ExtractionType.TEXT: CanonicalLabel.TEXT.value,
+            ExtractionType.FIGURE: CanonicalLabel.PICTURE.value,
+            ExtractionType.EQUATION: CanonicalLabel.FORMULA.value,
+            ExtractionType.OTHER: CanonicalLabel.OTHER.value,
+        }[self]

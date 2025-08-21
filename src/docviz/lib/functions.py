@@ -61,7 +61,7 @@ def _convert_pipeline_results_to_extraction_result(
             text_content = element.get("text", "")
             if element_type == "figure" and "summary" in element:
                 text_content = element.get("summary", "")
-            
+
             entry = ExtractionEntry(
                 text=text_content,
                 class_=element_type,
@@ -192,9 +192,11 @@ def extract_content_sync(
         ExtractionResult containing extracted content.
     """
     if extraction_config is None:
-        extraction_config = ExtractionConfig()
+        extraction_config = (
+            ExtractionConfig()
+        )  # TODO: move all default configs to constants or smth
     if detection_config is None:
-        detection_config = DetectionConfig(
+        detection_config = DetectionConfig(  # TODO: same as above
             imagesize=1024,
             confidence=0.5,
             device="cpu",
@@ -202,12 +204,11 @@ def extract_content_sync(
             model_path=str(MODELS_PATH / "doclayout_yolo_docstructbench_imgsz1024.pt"),
         )
     if ocr_config is None:
-        ocr_config = OCRConfig(
+        ocr_config = OCRConfig(  # TODO: same as above
             lang="eng",
             chart_labels=[
                 CanonicalLabel.PICTURE.value,
                 CanonicalLabel.TABLE.value,
-                CanonicalLabel.FORMULA.value,
             ],
             labels_to_exclude=[
                 CanonicalLabel.OTHER.value,
@@ -217,7 +218,7 @@ def extract_content_sync(
             ],
         )
     if llm_config is None:
-        llm_config = LLMConfig(
+        llm_config = LLMConfig(  # TODO: same as above
             model="gemma3",
             api_key="dummy-key",
             base_url="http://localhost:11434/v1",
@@ -240,6 +241,7 @@ def extract_content_sync(
                 ocr_config=ocr_config,
                 llm_config=llm_config,
                 includes=includes,
+                progress_callback=progress_callback,
             )
 
         # Convert pipeline results to ExtractionResult

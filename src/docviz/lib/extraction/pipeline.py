@@ -1,5 +1,6 @@
 import json
 import tempfile
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any, cast
 
@@ -10,6 +11,7 @@ from docviz.lib.detection import Detector
 from docviz.lib.extraction.utils import filter_detections
 from docviz.lib.image import ChartSummarizer, extract_regions, fill_regions_with_color
 from docviz.lib.pdf import (
+    # TODO: remove these imports once we have a better way to handle PDF analysis or otherwise uncomment and implement fully
     # analyze_pdf,
     # extract_pdf_page_text,
     # extract_pdf_text_excluding_regions,
@@ -44,6 +46,7 @@ def pipeline(
     ocr_config: OCRConfig,
     llm_config: LLMConfig,
     includes: list[ExtractionType],
+    progress_callback: Callable[[int], None] | None = None,
 ) -> list[dict[str, Any]]:
     """
     Full pipeline: convert PDF to PNG, detect charts, extract text, and summarize.
@@ -90,7 +93,7 @@ def pipeline(
 
         # Initialize models
         logger.info("Initializing detection and summarization models")
-        detector = Detector(
+        detector = Detector(  
             config=detection_config,
         )
         summarizer = ChartSummarizer(
@@ -106,6 +109,10 @@ def pipeline(
         results: list[dict[str, Any]] = []
         for idx, img_path in enumerate(image_paths):
             img = cv2.imread(str(img_path), cv2.IMREAD_COLOR)
+
+            if progress_callback is not None:
+                progress_callback(idx + 1)
+
             if img is None:
                 logger.error(f"Could not load image at {img_path}")
                 raise FileNotFoundError(f"Could not load image at {img_path}")
@@ -120,6 +127,12 @@ def pipeline(
 
             # Run layout detection once so we can both (a) exclude regions in PDF text and (b) reuse in processing
             detections = detector.parse_layout(img)
+
+            # Remove unneeded datections based of includes
+            detections = filter_detections(
+                detections,
+                labels_to_include=[inc.to_canonical_label() for inc in includes],
+            )
 
             analysis = page_analyses[idx]
             prefer_pdf_text = extraction_config.prefer_pdf_text
@@ -343,7 +356,7 @@ def process_text_elements(
     filled_image = fill_regions_with_color(
         image=image,
         regions=excluded_bboxes,
-        color=(255, 255, 255),  # White color
+        color=(255, 255, 255),
     )
 
     # Extract text from the entire processed image
