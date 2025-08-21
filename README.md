@@ -47,7 +47,7 @@
 - Directly from source:
 
     ```bash
-    git clone https://github.com/fresh-milkshake/docviz.git
+    git clone https://github.com/privateai-com/docviz.git
     cd docviz
     pip install -e .
     ```
