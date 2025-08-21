@@ -1,14 +1,14 @@
 import asyncio
 import concurrent.futures
 import tempfile
-from collections.abc import Callable
+from collections.abc import AsyncIterator, Callable, Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from docviz.constants import MODELS_PATH
 from docviz.lib.detection.backends import DetectionBackendEnum
 from docviz.lib.detection.labels import CanonicalLabel
-from docviz.lib.extraction import pipeline
+from docviz.lib.extraction import pipeline, pipeline_streaming
 from docviz.logging import get_logger
 from docviz.types import (
     DetectionConfig,
@@ -71,7 +71,7 @@ def _convert_pipeline_results_to_extraction_result(
             )
             entries.append(entry)
 
-    return ExtractionResult(entries=entries)
+    return ExtractionResult(entries=entries, page_number=page_number)
 
 
 def batch_extract(
@@ -250,4 +250,147 @@ def extract_content_sync(
     except Exception as e:
         # Log error and return empty result
         logger.error(f"Pipeline execution failed: {e}")
-        return ExtractionResult(entries=[])
+        return ExtractionResult(entries=[], page_number=0)
+
+
+async def extract_content_streaming(
+    document: "Document",
+    extraction_config: ExtractionConfig | None = None,
+    detection_config: DetectionConfig | None = None,
+    includes: list[ExtractionType] | None = None,
+    progress_callback: Callable[[int], None] | None = None,
+    ocr_config: OCRConfig | None = None,
+    llm_config: LLMConfig | None = None,
+) -> AsyncIterator[ExtractionResult]:
+    """
+    Asynchronous streaming version of extract_content that yields page results one by one.
+
+    Args:
+        document: Document to extract content from
+        extraction_config: Configuration for extraction
+        detection_config: Configuration for detection
+        includes: Types of content to include
+        progress_callback: Optional callback for progress tracking
+        ocr_config: Configuration for OCR
+        llm_config: Configuration for LLM
+
+    Yields:
+        ExtractionResult: Extraction result for each processed page
+    """
+
+    # Run the sync version in a separate thread
+    loop = asyncio.get_event_loop()
+
+    def _get_streaming_sync_generator():
+        return extract_content_streaming_sync(
+            document,
+            extraction_config,
+            detection_config,
+            includes,
+            progress_callback,
+            ocr_config,
+            llm_config,
+        )
+
+    # Get the generator from executor
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        generator = await loop.run_in_executor(executor, _get_streaming_sync_generator)
+
+        # Yield each result from the generator
+        while True:
+            try:
+                # Get next result from generator in executor
+                result = await loop.run_in_executor(executor, next, generator, None)
+                if result is None:
+                    break
+                yield result
+            except StopIteration:
+                break
+
+
+def extract_content_streaming_sync(
+    document: "Document",
+    extraction_config: ExtractionConfig | None = None,
+    detection_config: DetectionConfig | None = None,
+    includes: list[ExtractionType] | None = None,
+    progress_callback: Callable[[int], None] | None = None,
+    ocr_config: OCRConfig | None = None,
+    llm_config: LLMConfig | None = None,
+) -> Iterator[ExtractionResult]:
+    """
+    Synchronous streaming version of extract_content that yields page results one by one.
+
+    Args:
+        document: Document to extract content from
+        extraction_config: Configuration for extraction
+        detection_config: Configuration for detection
+        includes: Types of content to include
+        progress_callback: Optional callback for progress tracking
+        ocr_config: Configuration for OCR
+        llm_config: Configuration for LLM
+
+    Yields:
+        ExtractionResult: Extraction result for each processed page
+    """
+    if extraction_config is None:
+        extraction_config = ExtractionConfig()
+    if detection_config is None:
+        detection_config = DetectionConfig(
+            imagesize=1024,
+            confidence=0.5,
+            device="cpu",
+            layout_detection_backend=DetectionBackendEnum.DOCLAYOUT_YOLO,
+            model_path=str(MODELS_PATH / "doclayout_yolo_docstructbench_imgsz1024.pt"),
+        )
+    if ocr_config is None:
+        ocr_config = OCRConfig(
+            lang="eng",
+            chart_labels=[
+                CanonicalLabel.PICTURE.value,
+                CanonicalLabel.TABLE.value,
+            ],
+            labels_to_exclude=[
+                CanonicalLabel.OTHER.value,
+                CanonicalLabel.PAGE_FOOTER.value,
+                CanonicalLabel.PAGE_HEADER.value,
+                CanonicalLabel.FOOTNOTE.value,
+            ],
+        )
+    if llm_config is None:
+        llm_config = LLMConfig(
+            model="gemma3",
+            api_key="dummy-key",
+            base_url="http://localhost:11434/v1",
+        )
+    if includes is None:
+        includes = ExtractionType.get_all()
+
+    # Handle ExtractionType.ALL
+    if ExtractionType.ALL in includes:
+        includes = ExtractionType.get_all()
+
+    try:
+        # Create temporary output directory
+        with tempfile.TemporaryDirectory() as temp_dir:
+            # Use the streaming pipeline generator
+            pipeline_generator = pipeline_streaming(
+                document_path=document.file_path,
+                output_dir=Path(temp_dir),
+                detection_config=detection_config,
+                extraction_config=extraction_config,
+                ocr_config=ocr_config,
+                llm_config=llm_config,
+                includes=includes,
+                progress_callback=progress_callback,
+            )
+
+            # Yield converted results one by one
+            for page_result in pipeline_generator:
+                # Convert single page result to ExtractionResult
+                extraction_result = _convert_pipeline_results_to_extraction_result([page_result])
+                yield extraction_result
+
+    except Exception as e:
+        # Log error and return empty result
+        logger.error(f"Streaming pipeline execution failed: {e}")
+        yield ExtractionResult(entries=[], page_number=0)

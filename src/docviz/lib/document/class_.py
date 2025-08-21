@@ -1,9 +1,14 @@
-from collections.abc import Callable, Iterator
+from collections.abc import AsyncIterator, Callable, Iterator
 
 import fitz  # PyMuPDF
 
 from docviz.lib.document.utils import resolve_path_or_url
-from docviz.lib.functions import extract_content, extract_content_sync
+from docviz.lib.functions import (
+    extract_content,
+    extract_content_streaming,
+    extract_content_streaming_sync,
+    extract_content_sync,
+)
 from docviz.logging import get_logger
 from docviz.types import (
     DetectionConfig,
@@ -102,7 +107,74 @@ class Document:
             llm_config=llm_config,
         )
 
-    def extract_streaming(
+    async def extract_streaming(
+        self,
+        extraction_config: ExtractionConfig | None = None,
+        detection_config: DetectionConfig | None = None,
+        includes: list[ExtractionType] | None = None,
+        progress_callback: Callable[[int], None] | None = None,
+        llm_config: LLMConfig | None = None,
+    ) -> AsyncIterator[ExtractionResult]:
+        """Extract content page by page for memory-efficient streaming processing.
+
+        Args:
+            extraction_config: Configuration for extraction
+            detection_config: Configuration for detection
+            includes: Types of content to include
+            progress_callback: Optional callback for progress tracking
+            llm_config: Configuration for LLM
+
+        Yields:
+            ExtractionResult: Extraction result for each processed page
+        """
+        # Use the document's config if no extraction_config is provided
+        if extraction_config is None:
+            extraction_config = self.config
+
+        async for page_result in extract_content_streaming(
+            document=self,
+            extraction_config=extraction_config,
+            detection_config=detection_config,
+            includes=includes,
+            progress_callback=progress_callback,
+            llm_config=llm_config,
+        ):
+            yield page_result
+
+    def extract_streaming_sync(
+        self,
+        extraction_config: ExtractionConfig | None = None,
+        detection_config: DetectionConfig | None = None,
+        includes: list[ExtractionType] | None = None,
+        progress_callback: Callable[[int], None] | None = None,
+        llm_config: LLMConfig | None = None,
+    ) -> Iterator[ExtractionResult]:
+        """Extract content page by page for memory-efficient streaming processing (sync version).
+
+        Args:
+            extraction_config: Configuration for extraction
+            detection_config: Configuration for detection
+            includes: Types of content to include
+            progress_callback: Optional callback for progress tracking
+            llm_config: Configuration for LLM
+
+        Yields:
+            ExtractionResult: Extraction result for each processed page
+        """
+        # Use the document's config if no extraction_config is provided
+        if extraction_config is None:
+            extraction_config = self.config
+
+        yield from extract_content_streaming_sync(
+            document=self,
+            extraction_config=extraction_config,
+            detection_config=detection_config,
+            includes=includes,
+            progress_callback=progress_callback,
+            llm_config=llm_config,
+        )
+
+    def extract_chunked(
         self,
         chunk_size: int = 10,
         extraction_config: ExtractionConfig | None = None,

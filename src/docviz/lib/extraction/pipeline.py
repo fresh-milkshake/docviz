@@ -1,6 +1,6 @@
 import json
 import tempfile
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from pathlib import Path
 from typing import Any, cast
 
@@ -93,7 +93,7 @@ def pipeline(
 
         # Initialize models
         logger.info("Initializing detection and summarization models")
-        detector = Detector(  
+        detector = Detector(
             config=detection_config,
         )
         summarizer = ChartSummarizer(
@@ -382,3 +382,167 @@ def process_text_elements(
 
     logger.info(f"Successfully processed {len(text_elements)} text element(-s)")
     return text_elements
+
+
+def pipeline_streaming(
+    document_path: Path,
+    output_dir: Path,
+    detection_config: DetectionConfig,
+    extraction_config: ExtractionConfig,
+    ocr_config: OCRConfig,
+    llm_config: LLMConfig,
+    includes: list[ExtractionType],
+    progress_callback: Callable[[int], None] | None = None,
+) -> Iterator[dict[str, Any]]:
+    """
+    Streaming version of pipeline: yields page results one by one as they are processed.
+
+    Args:
+        document_path: Path to the input PDF document
+        output_dir: Directory to save outputs
+        detection_config: Configuration for detection
+        extraction_config: Configuration for extraction
+        ocr_config: Configuration for OCR
+        llm_config: Configuration for LLM
+        includes: List of extraction types to include
+        progress_callback: Optional callback for progress tracking
+
+    Yields:
+        dict[str, Any]: Page result dict for each processed page
+    """
+    logger.info("Starting streaming document processing pipeline")
+
+    model_name = llm_config.model
+    base_url = llm_config.base_url
+    api_key = llm_config.api_key
+
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        logger.debug(f"Created temporary directory: {temp_path}")
+
+        logger.info("Converting PDF to PNG images")
+        image_paths = pdf_to_png(
+            pdf_path=str(document_path),
+            output_dir=str(temp_path),
+            zoom_x=extraction_config.zoom_x,
+            zoom_y=extraction_config.zoom_y,
+        )
+        logger.info(f"Converted PDF to {len(image_paths)} PNG images")
+
+        logger.info("Analyzing PDF pages for native text and images")
+        try:
+            page_analyses = analyze_pdf(document_path)
+            logger.info("PDF analysis completed successfully")
+        except Exception as exc:
+            logger.warning(
+                f"PDF analysis failed with error: {exc}. Falling back to OCR-only text extraction."
+            )
+            page_analyses = [None] * len(image_paths)
+
+        # Initialize models
+        logger.info("Initializing detection and summarization models")
+        detector = Detector(
+            config=detection_config,
+        )
+        summarizer = ChartSummarizer(
+            model_name=model_name,
+            base_url=base_url,
+            api_key=api_key or "",
+            retries=3,
+            timeout=5,
+        )
+        logger.info("Models initialized successfully")
+
+        # Process each page and yield results one by one
+        for idx, img_path in enumerate(image_paths):
+            img = cv2.imread(str(img_path), cv2.IMREAD_COLOR)
+
+            if progress_callback is not None:
+                progress_callback(idx + 1)
+
+            if img is None:
+                logger.error(f"Could not load image at {img_path}")
+                raise FileNotFoundError(f"Could not load image at {img_path}")
+
+            if extraction_config.page_limit is not None and idx >= extraction_config.page_limit:
+                logger.info(
+                    f"Page limit of {extraction_config.page_limit} reached, stopping processing."
+                )
+                break
+
+            logger.info(f"Processing page {idx + 1}/{len(image_paths)}")
+
+            # Run layout detection once so we can both (a) exclude regions in PDF text and (b) reuse in processing
+            detections = detector.parse_layout(img)
+
+            # Remove unneeded detections based on includes
+            detections = filter_detections(
+                detections,
+                labels_to_include=[inc.to_canonical_label() for inc in includes],
+            )
+
+            analysis = page_analyses[idx]
+            prefer_pdf_text = extraction_config.prefer_pdf_text
+            fast_text: str | None = None
+            if (
+                analysis is not None
+                and prefer_pdf_text
+                and analysis.has_text
+                and not analysis.is_full_page_image
+            ):
+                # Merge exclusion regions: image regions from analysis + labels_to_exclude regions from detections
+                excluded_label_detections = filter_detections(
+                    detections, extraction_config.labels_to_exclude
+                )
+                excluded_bboxes = [
+                    (
+                        float(b[0]),
+                        float(b[1]),
+                        float(b[2]),
+                        float(b[3]),
+                    )
+                    for b in (detection.bbox for detection in excluded_label_detections)
+                ]
+                combined_excludes = list(analysis.image_rects) + excluded_bboxes
+
+                if combined_excludes:
+                    logger.debug(
+                        f"Excluding {len(combined_excludes)} regions from PDF text on page {idx + 1}"
+                    )
+                    fast_text = extract_pdf_text_excluding_regions(
+                        document_path, analysis.page_index, combined_excludes
+                    )
+                else:
+                    fast_text = extract_pdf_page_text(document_path, analysis.page_index)
+
+                if fast_text and len(fast_text) < extraction_config.pdf_text_threshold_chars:
+                    fast_text = None
+                    logger.debug(
+                        f"Discarded short PDF text below threshold; will use OCR for page {idx + 1}"
+                    )
+                else:
+                    length = 0 if fast_text is None else len(fast_text)
+                    logger.info(f"Using PDF-native text for page {idx + 1} (length={length})")
+
+            page_result = process_single_page(
+                image=img,
+                page_number=idx + 1,
+                detector=detector,
+                summarizer=summarizer,
+                ocr_lang=ocr_config.lang,
+                charts_labels=ocr_config.chart_labels,
+                labels_to_exclude_from_ocr=ocr_config.labels_to_exclude,
+                pre_extracted_text=fast_text,
+                precomputed_detections=detections,
+            )
+
+            # Save individual page result to output directory
+            with open(Path(output_dir) / f"page_{idx + 1}.json", "w") as f:
+                json.dump(page_result, f)
+
+            # Yield the page result
+            yield page_result
+
+    logger.info("Streaming pipeline completed successfully")

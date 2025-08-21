@@ -4,7 +4,13 @@ from pathlib import Path
 
 from .environment import check_dependencies
 from .lib.document.class_ import Document
-from .lib.functions import batch_extract, extract_content, extract_content_sync
+from .lib.functions import (
+    batch_extract,
+    extract_content,
+    extract_content_streaming,
+    extract_content_streaming_sync,
+    extract_content_sync,
+)
 from .types import (
     DetectionConfig,
     ExtractionChunk,
@@ -77,5 +83,7 @@ __all__ = [
     "SaveFormat",
     "batch_extract",
     "extract_content",
+    "extract_content_streaming",
+    "extract_content_streaming_sync",
     "extract_content_sync",
 ]

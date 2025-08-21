@@ -32,8 +32,9 @@ class ExtractionEntry:
 
 
 class ExtractionResult:
-    def __init__(self, entries: list[ExtractionEntry]):
+    def __init__(self, entries: list[ExtractionEntry], page_number: int):
         self.entries = entries
+        self.page_number = page_number
 
     def to_json(self, file_path: str | Path):
         """Save the extraction result to a JSON file.
@@ -82,8 +83,12 @@ class ExtractionResult:
         tree = ET.ElementTree(root)
         tree.write(f"{file_path}.xml", encoding="utf-8", xml_declaration=True)
 
-    def save(self, file_path: str | Path, save_format: SaveFormat | list[SaveFormat]):
-        """Save the extraction result to a file.
+    def save(
+        self,
+        file_path_without_ext: str | Path,
+        save_format: SaveFormat | list[SaveFormat],
+    ):
+        """Save the extraction result to a file. Its important to note that the file path is without extension.
 
         Args:
             file_path (str | Path): The path to the file to save the result to without extension.
@@ -98,17 +103,17 @@ class ExtractionResult:
 
         for format in save_format:
             if format == SaveFormat.JSON:
-                self.to_json(file_path)
+                self.to_json(file_path_without_ext)
             elif format == SaveFormat.CSV:
-                self.to_csv(file_path)
+                self.to_csv(file_path_without_ext)
             elif format == SaveFormat.EXCEL:
-                self.to_excel(file_path)
+                self.to_excel(file_path_without_ext)
             elif format == SaveFormat.XML:
-                self.to_xml(file_path)
+                self.to_xml(file_path_without_ext)
             else:
                 raise ValueError(f"Unsupported save format: {format}")
 
-        logger.info(f"Saving extraction result to {file_path}")
+        logger.info(f"Saving extraction result to {file_path_without_ext}")
 
     def to_dict(self) -> dict:
         """Convert the extraction result to a dictionary.
@@ -147,3 +152,24 @@ class ExtractionResult:
                 }
             )
         return pd.DataFrame(data)
+
+    def __str__(self) -> str:
+        """
+        Return a human-readable string representation of the ExtractionResult.
+
+        Returns:
+            str: Pretty-printed summary of the extraction result.
+        """
+        entries_preview = ",\n    ".join(
+            f"{{'text': {repr(entry.text)[:40]}..., 'class': '{entry.class_}', 'confidence': {entry.confidence:.2f}, 'bbox': {entry.bbox}, 'page_number': {entry.page_number}}}"
+            for entry in self.entries[:5]
+        )
+        more = ""
+        if len(self.entries) > 5:
+            more = f"\n    ... ({len(self.entries) - 5} more entries)"
+        return (
+            f"ExtractionResult(\n"
+            f"  page_number={self.page_number},\n"
+            f"  entries=[\n    {entries_preview}{more}\n  ]\n"
+            f")"
+        )
