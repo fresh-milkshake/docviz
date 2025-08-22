@@ -32,7 +32,45 @@ def print_banner():
 
 
 def validate_file_path(ctx, param, value):
-    """Validate that the file path exists or is a valid URL."""
+    """Validate that the file path exists or is a valid URL.
+
+    This function validates input file paths for the CLI, supporting both local file
+    paths and URLs. It performs existence checks for local files and URL format
+    validation for remote resources.
+
+    The function handles various input scenarios:
+    - Local file paths: Validates file existence and type
+    - URLs: Validates URL format without checking accessibility
+    - None values: Returns as-is for optional parameters
+    - Invalid paths: Raises descriptive error messages
+
+    Args:
+        ctx: Click context object (unused but required by Click callback signature).
+        param: Click parameter object (unused but required by Click callback signature).
+        value: The file path or URL string to validate. Can be None for optional
+            parameters.
+
+    Returns:
+        str: The validated file path or URL. Returns the original value if it's a
+            valid local file path or URL, or None if the input was None.
+
+    Raises:
+        click.BadParameter: If the file path is invalid, the file doesn't exist,
+            or the path is not a regular file (e.g., it's a directory).
+
+    Example:
+        >>> # Valid local file
+        >>> validate_file_path(None, None, "document.pdf")
+        "document.pdf"
+        >>> 
+        >>> # Valid URL
+        >>> validate_file_path(None, None, "https://example.com/doc.pdf")
+        "https://example.com/doc.pdf"
+        >>> 
+        >>> # Invalid file (raises BadParameter)
+        >>> validate_file_path(None, None, "nonexistent.pdf")
+        # Raises: click.BadParameter: File does not exist: nonexistent.pdf
+    """
     if value is None:
         return value
 
@@ -54,7 +92,47 @@ def validate_file_path(ctx, param, value):
 
 
 def validate_output_format(ctx, param, value):
-    """Validate output format."""
+    """Validate and normalize output format specification.
+
+    This function validates output format strings for the CLI, converting them to
+    proper SaveFormat enum values. It handles case-insensitive format names and
+    provides helpful error messages for invalid formats.
+
+    The function supports all formats defined in the SaveFormat enum:
+    - JSON: Structured data in JSON format
+    - CSV: Comma-separated values format
+    - Excel: Microsoft Excel format (.xlsx)
+    - XML: Extensible Markup Language format
+
+    Args:
+        ctx: Click context object (unused but required by Click callback signature).
+        param: Click parameter object (unused but required by Click callback signature).
+        value: The output format string to validate. Can be None, in which case
+            JSON format is used as the default.
+
+    Returns:
+        SaveFormat: The validated output format enum value. Returns SaveFormat.JSON
+            if the input is None.
+
+    Raises:
+        click.BadParameter: If the format string is not a valid SaveFormat value.
+            The error message includes a list of all valid format options.
+
+    Example:
+        >>> # Valid formats (case-insensitive)
+        >>> validate_output_format(None, None, "json")
+        <SaveFormat.JSON: 'json'>
+        >>> validate_output_format(None, None, "CSV")
+        <SaveFormat.CSV: 'csv'>
+        >>> 
+        >>> # None returns default format
+        >>> validate_output_format(None, None, None)
+        <SaveFormat.JSON: 'json'>
+        >>> 
+        >>> # Invalid format (raises BadParameter)
+        >>> validate_output_format(None, None, "invalid")
+        # Raises: click.BadParameter: Invalid format. Choose from: json, csv, excel, xml
+    """
     if value is None:
         return SaveFormat.JSON
 
@@ -67,7 +145,56 @@ def validate_output_format(ctx, param, value):
 
 
 def validate_extraction_types(ctx, param, value):
-    """Validate extraction types."""
+    """Validate and normalize extraction type specifications.
+
+    This function validates extraction type strings for the CLI, converting them to
+    proper ExtractionType enum values. It handles case-insensitive type names and
+    provides special handling for the "all" type which expands to all available types.
+
+    The function supports all extraction types defined in the ExtractionType enum:
+    - all: Special value that expands to all individual types
+    - table: Tabular data and structured information
+    - text: Regular text content including paragraphs and headings
+    - figure: Visual elements including charts, graphs, and images
+    - equation: Mathematical expressions and formulas
+    - other: Miscellaneous content not fitting other categories
+
+    Args:
+        ctx: Click context object (unused but required by Click callback signature).
+        param: Click parameter object (unused but required by Click callback signature).
+        value: The extraction type strings to validate. Can be None, in which case
+            [ExtractionType.ALL] is used as the default. Can be a single string or
+            a tuple of strings for multiple types.
+
+    Returns:
+        list[ExtractionType]: List of validated extraction type enum values. Returns
+            [ExtractionType.ALL] if the input is None or if "all" is specified.
+
+    Raises:
+        click.BadParameter: If any extraction type string is not a valid ExtractionType
+            value. The error message includes a list of all valid type options.
+
+    Example:
+        >>> # Single type
+        >>> validate_extraction_types(None, None, ("table",))
+        [<ExtractionType.TABLE: 'table'>]
+        >>> 
+        >>> # Multiple types
+        >>> validate_extraction_types(None, None, ("table", "text"))
+        [<ExtractionType.TABLE: 'table'>, <ExtractionType.TEXT: 'text'>]
+        >>> 
+        >>> # All types (special handling)
+        >>> validate_extraction_types(None, None, ("all",))
+        [<ExtractionType.ALL: 'all'>]
+        >>> 
+        >>> # None returns default
+        >>> validate_extraction_types(None, None, None)
+        [<ExtractionType.ALL: 'all'>]
+        >>> 
+        >>> # Invalid type (raises BadParameter)
+        >>> validate_extraction_types(None, None, ("invalid",))
+        # Raises: click.BadParameter: Invalid extraction type 'invalid'. Choose from: all, table, text, figure, equation, other
+    """
     if value is None:
         return [ExtractionType.ALL]
 
@@ -87,7 +214,7 @@ def validate_extraction_types(ctx, param, value):
 
 
 @click.group()
-@click.version_option(version="0.4.0", prog_name="docviz")
+@click.version_option(version="0.7.0", prog_name="docviz")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose output")
 def cli(verbose):
     """DocViz CLI - Extract and analyze content from documents."""
@@ -250,7 +377,7 @@ def info():
     info_table.add_column("Property", style="cyan")
     info_table.add_column("Value", style="white")
 
-    info_table.add_row("Version", "0.4.0")
+    info_table.add_row("Version", "0.7.0")
     info_table.add_row("Python", ">=3.10")
     info_table.add_row("License", "MIT")
 

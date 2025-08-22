@@ -1,7 +1,7 @@
 import asyncio
 import threading
-from pathlib import Path
 
+from .constants import get_docviz_directory
 from .environment import check_dependencies
 from .lib.document.class_ import Document
 from .lib.functions import (
@@ -19,6 +19,7 @@ from .types import (
     ExtractionResult,
     ExtractionType,
     LLMConfig,
+    OCRConfig,
     SaveFormat,
 )
 
@@ -30,17 +31,25 @@ def _check_dependencies_once():
     """
     Ensure dependencies are checked only once in a thread-safe and process-safe manner.
 
-    This function is invoked on import to guarantee that dependency checks are performed
-    a single time per user environment, even if multiple threads or processes are involved.
-    A lock file in the user's home directory prevents redundant checks across processes.
+    This function is called automatically on module import to verify that all required
+    dependencies (models, libraries, etc.) are available before document processing.
+    This prevents runtime errors and provides early feedback about missing dependencies.
+
+    A global variable tracks whether dependencies have been checked in the current thread.
+    For process-level safety, a lock file at ~/.docviz/dependencies_checked.lock prevents
+    multiple processes from performing the check simultaneously. Double-checked locking
+    is used to minimize unnecessary locking and improve performance. If no asyncio event
+    loop is available, one is created before running the dependency check.
 
     Raises:
-        Exception: If the dependencies check fails.
+        Exception: If any required dependency is missing or the dependency check fails.
+            The specific exception type depends on what dependency is missing (e.g.,
+            FileNotFoundError for missing models, ImportError for missing packages).
     """
     global __DEPENDENCIES_CHECKED
 
     # Use a lock file to ensure this runs only once across processes
-    lock_file = Path.home() / ".docviz" / "dependencies_checked.lock"
+    lock_file = get_docviz_directory() / "dependencies_checked.lock"
     lock_file.parent.mkdir(exist_ok=True)
 
     # Check if already verified in this session or globally
@@ -80,6 +89,7 @@ __all__ = [
     "ExtractionResult",
     "ExtractionType",
     "LLMConfig",
+    "OCRConfig",
     "SaveFormat",
     "batch_extract",
     "extract_content",

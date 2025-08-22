@@ -32,11 +32,34 @@ def _convert_pipeline_results_to_extraction_result(
 ) -> ExtractionResult:
     """Convert pipeline results to ExtractionResult format.
 
+    This function transforms the raw pipeline output into a standardized ExtractionResult
+    format. It handles type mapping, coordinate conversion, and text content extraction
+    for different element types.
+
     Args:
-        pipeline_results: List of page results from pipeline function.
+        pipeline_results: List of page results from pipeline function. Each page result
+            should contain a "page_number" key and an "elements" list. Each element
+            should have "type", "bbox", "text", "confidence", and optionally "summary"
+            keys.
 
     Returns:
-        ExtractionResult with converted entries.
+        ExtractionResult: Standardized extraction result containing all converted
+            entries with proper type annotations and coordinate formats.
+
+    Example:
+        >>> pipeline_results = [{
+        ...     "page_number": 1,
+        ...     "elements": [{
+        ...         "type": "chart",
+        ...         "bbox": [100, 200, 300, 400],
+        ...         "text": "Chart title",
+        ...         "summary": "Bar chart showing sales data",
+        ...         "confidence": 0.95
+        ...     }]
+        ... }]
+        >>> result = _convert_pipeline_results_to_extraction_result(pipeline_results)
+        >>> result.entries[0].class_ == "figure"
+        True
     """
     entries = []
 
@@ -83,15 +106,44 @@ def batch_extract(
 ) -> list[ExtractionResult]:
     """Extract content from multiple documents in batch.
 
+    This function processes multiple documents sequentially using the same configuration
+    settings. It's designed for bulk document processing scenarios where you need to
+    extract content from a collection of documents with consistent settings.
+
+    Performance considerations:
+    - Documents are processed sequentially, not in parallel
+    - Memory usage scales with the number of documents and their sizes
+    - Progress tracking is available for long-running batch operations
+    - Each document is processed independently, so failures don't affect other documents
+
     Args:
-        documents: List of Document objects to process.
-        extraction_config: Configuration for extraction.
-        detection_config: Configuration for detection.
-        includes: Types of content to include.
-        progress_callback: Optional callback for progress tracking.
+        documents: List of Document objects to process. Each document should be a valid
+            Document instance with an accessible file path.
+        extraction_config: Configuration for extraction. If None, default settings
+            will be used for all documents.
+        detection_config: Configuration for detection. If None, default settings
+            will be used for all documents.
+        includes: Types of content to include in extraction. If None, all content
+            types will be extracted. Use ExtractionType.ALL for all types or specify
+            individual types like [ExtractionType.TABLE, ExtractionType.TEXT].
+        progress_callback: Optional callback function for progress tracking. The callback
+            receives the current document index (1-based) as its argument. Useful for
+            updating progress bars or logging in user interfaces.
 
     Returns:
-        List of ExtractionResult objects.
+        list[ExtractionResult]: List of extraction results, one for each input document.
+            The order of results matches the order of input documents. Each result
+            contains all extracted content for that document.
+
+    Example:
+        >>> docs = [Document("doc1.pdf"), Document("doc2.pdf")]
+        >>> results = batch_extract(
+        ...     documents=docs,
+        ...     includes=[ExtractionType.TABLE, ExtractionType.TEXT],
+        ...     progress_callback=lambda i: print(f"Processing document {i}")
+        ... )
+        >>> len(results) == 2
+        True
     """
     results = []
     for i, document in enumerate(documents):
@@ -113,6 +165,61 @@ async def extract_content(
     ocr_config: OCRConfig | None = None,
     llm_config: LLMConfig | None = None,
 ) -> ExtractionResult:
+    """Extract content from a document asynchronously.
+
+    This is the primary async function for document content extraction. It processes
+    the entire document and returns all extracted content in a single result. The
+    function runs the synchronous extraction pipeline in a thread pool to provide
+    async behavior while maintaining compatibility with the underlying processing
+    pipeline.
+
+    The function automatically sets up default configurations if none are provided:
+    - DetectionConfig: Uses CPU device with 1024 image size and 0.5 confidence threshold
+    - OCRConfig: English language with chart labels for pictures, tables, and formulas
+    - LLMConfig: Uses Gemma3 model with local Ollama server
+    - ExtractionConfig: Uses default extraction settings
+
+    Processing workflow:
+    1. Validates and sets up default configurations
+    2. Creates a temporary directory for processing artifacts
+    3. Runs the extraction pipeline in a thread pool
+    4. Converts pipeline results to standardized format
+    5. Cleans up temporary files automatically
+
+    Args:
+        document: Document object to extract content from. Must have a valid file path
+            accessible to the current process.
+        extraction_config: Configuration for extraction process. If None, uses default
+            settings optimized for general document processing.
+        detection_config: Configuration for layout detection. If None, uses CPU-based
+            detection with balanced speed/accuracy settings.
+        includes: List of content types to extract. If None, extracts all available
+            content types. Use ExtractionType.ALL for all types or specify individual
+            types like [ExtractionType.TABLE, ExtractionType.TEXT].
+        progress_callback: Optional callback for progress tracking. Called with current
+            page number during processing. Useful for UI progress updates.
+        ocr_config: Configuration for OCR processing. If None, uses English language
+            with optimized settings for document analysis.
+        llm_config: Configuration for LLM-based content analysis. If None, uses local
+            Gemma3 model via Ollama server.
+
+    Returns:
+        ExtractionResult: Complete extraction result containing all extracted content
+            from the document, organized by page and content type.
+
+    Raises:
+        Exception: If document processing fails, file access issues, or pipeline errors
+            occur. The specific exception depends on the failure point.
+
+    Example:
+        >>> doc = Document("document.pdf")
+        >>> result = await extract_content(
+        ...     document=doc,
+        ...     includes=[ExtractionType.TABLE, ExtractionType.TEXT],
+        ...     progress_callback=lambda page: print(f"Processing page {page}")
+        ... )
+        >>> print(f"Extracted {len(result.entries)} elements")
+    """
     if extraction_config is None:
         extraction_config = ExtractionConfig()
     if detection_config is None:
@@ -177,19 +284,65 @@ def extract_content_sync(
     ocr_config: OCRConfig | None = None,
     llm_config: LLMConfig | None = None,
 ) -> ExtractionResult:
-    """Synchronous version of extract_content.
+    """Extract content from a document synchronously.
+
+    This is the core synchronous function for document content extraction. It processes
+    the entire document in the current thread and returns all extracted content in a
+    single result. This function is the foundation for both sync and async extraction
+    workflows.
+
+    The function automatically sets up default configurations if none are provided:
+    - DetectionConfig: Uses CPU device with 1024 image size and 0.5 confidence threshold
+    - OCRConfig: English language with chart labels for pictures, tables, and formulas
+    - LLMConfig: Uses Gemma3 model with local Ollama server
+    - ExtractionConfig: Uses default extraction settings
+
+    Processing workflow:
+    1. Validates and sets up default configurations
+    2. Creates a temporary directory for processing artifacts
+    3. Runs the extraction pipeline synchronously
+    4. Converts pipeline results to standardized format
+    5. Cleans up temporary files automatically
+
+    Memory and performance considerations:
+    - Processes the entire document in memory
+    - Uses temporary files for intermediate processing steps
+    - Automatically cleans up temporary files on completion
+    - Suitable for documents up to several hundred pages
 
     Args:
-        document: Document to extract content from.
-        extraction_config: Configuration for extraction.
-        detection_config: Configuration for detection.
-        includes: Types of content to include.
-        progress_callback: Optional callback for progress tracking.
-        ocr_config: Configuration for OCR.
-        llm_config: Configuration for LLM.
+        document: Document object to extract content from. Must have a valid file path
+            accessible to the current process.
+        extraction_config: Configuration for extraction process. If None, uses default
+            settings optimized for general document processing.
+        detection_config: Configuration for layout detection. If None, uses CPU-based
+            detection with balanced speed/accuracy settings.
+        includes: List of content types to extract. If None, extracts all available
+            content types. Use ExtractionType.ALL for all types or specify individual
+            types like [ExtractionType.TABLE, ExtractionType.TEXT].
+        progress_callback: Optional callback for progress tracking. Called with current
+            page number during processing. Useful for UI progress updates.
+        ocr_config: Configuration for OCR processing. If None, uses English language
+            with optimized settings for document analysis.
+        llm_config: Configuration for LLM-based content analysis. If None, uses local
+            Gemma3 model via Ollama server.
 
     Returns:
-        ExtractionResult containing extracted content.
+        ExtractionResult: Complete extraction result containing all extracted content
+            from the document, organized by page and content type.
+
+    Raises:
+        Exception: If document processing fails, file access issues, or pipeline errors
+            occur. The specific exception depends on the failure point.
+
+    Example:
+        >>> doc = Document("document.pdf")
+        >>> result = extract_content_sync(
+        ...     document=doc,
+        ...     includes=[ExtractionType.TABLE, ExtractionType.TEXT],
+        ...     progress_callback=lambda page: print(f"Processing page {page}")
+        ... )
+        >>> print(f"Extracted {len(result.entries)} elements")
     """
     if extraction_config is None:
         extraction_config = (
@@ -262,20 +415,59 @@ async def extract_content_streaming(
     ocr_config: OCRConfig | None = None,
     llm_config: LLMConfig | None = None,
 ) -> AsyncIterator[ExtractionResult]:
-    """
-    Asynchronous streaming version of extract_content that yields page results one by one.
+    """Extract content from a document asynchronously with streaming results.
+
+    This function provides memory-efficient streaming extraction by yielding results
+    page by page as they are processed. It's ideal for large documents where loading
+    all content into memory at once would be problematic.
+
+    The function runs the synchronous streaming pipeline in a thread pool to provide
+    async behavior while maintaining the memory efficiency of streaming processing.
+    Each yielded result contains the extracted content for a single page.
+
+    Key benefits:
+    - Memory efficient: Only one page is processed at a time
+    - Real-time results: Pages are yielded as soon as they're processed
+    - Progress tracking: Can track progress on a per-page basis
+    - Scalable: Suitable for documents of any size
+
+    Processing workflow:
+    1. Sets up default configurations if none provided
+    2. Creates temporary directory for processing artifacts
+    3. Runs streaming pipeline in thread pool
+    4. Yields page results as they become available
+    5. Cleans up temporary files on completion
 
     Args:
-        document: Document to extract content from
-        extraction_config: Configuration for extraction
-        detection_config: Configuration for detection
-        includes: Types of content to include
-        progress_callback: Optional callback for progress tracking
-        ocr_config: Configuration for OCR
-        llm_config: Configuration for LLM
+        document: Document object to extract content from. Must have a valid file path
+            accessible to the current process.
+        extraction_config: Configuration for extraction process. If None, uses default
+            settings optimized for general document processing.
+        detection_config: Configuration for layout detection. If None, uses CPU-based
+            detection with balanced speed/accuracy settings.
+        includes: List of content types to extract. If None, extracts all available
+            content types. Use ExtractionType.ALL for all types or specify individual
+            types like [ExtractionType.TABLE, ExtractionType.TEXT].
+        progress_callback: Optional callback for progress tracking. Called with current
+            page number during processing. Useful for UI progress updates.
+        ocr_config: Configuration for OCR processing. If None, uses English language
+            with optimized settings for document analysis.
+        llm_config: Configuration for LLM-based content analysis. If None, uses local
+            Gemma3 model via Ollama server.
 
     Yields:
-        ExtractionResult: Extraction result for each processed page
+        ExtractionResult: Extraction result for each processed page. Each result
+            contains all extracted content for that specific page.
+
+    Raises:
+        Exception: If document processing fails, file access issues, or pipeline errors
+            occur. The specific exception depends on the failure point.
+
+    Example:
+        >>> doc = Document("large_document.pdf")
+        >>> async for page_result in extract_content_streaming(doc):
+        ...     print(f"Page {page_result.page_number}: {len(page_result.entries)} elements")
+        ...     # Process each page as it becomes available
     """
 
     # Run the sync version in a separate thread
@@ -317,20 +509,61 @@ def extract_content_streaming_sync(
     ocr_config: OCRConfig | None = None,
     llm_config: LLMConfig | None = None,
 ) -> Iterator[ExtractionResult]:
-    """
-    Synchronous streaming version of extract_content that yields page results one by one.
+    """Extract content from a document synchronously with streaming results.
+
+    This function provides memory-efficient streaming extraction by yielding results
+    page by page as they are processed. It's the core synchronous implementation
+    that powers both sync and async streaming workflows.
+
+    The function processes pages one at a time and yields results immediately upon
+    completion of each page. This approach is ideal for large documents where
+    loading all content into memory at once would be problematic or when you need
+    to start processing results before the entire document is complete.
+
+    Key benefits:
+    - Memory efficient: Only one page is processed at a time
+    - Real-time results: Pages are yielded as soon as they're processed
+    - Progress tracking: Can track progress on a per-page basis
+    - Scalable: Suitable for documents of any size
+    - Synchronous: No async/await complexity for simple use cases
+
+    Processing workflow:
+    1. Sets up default configurations if none provided
+    2. Creates temporary directory for processing artifacts
+    3. Runs streaming pipeline synchronously
+    4. Yields page results as they become available
+    5. Cleans up temporary files on completion
 
     Args:
-        document: Document to extract content from
-        extraction_config: Configuration for extraction
-        detection_config: Configuration for detection
-        includes: Types of content to include
-        progress_callback: Optional callback for progress tracking
-        ocr_config: Configuration for OCR
-        llm_config: Configuration for LLM
+        document: Document object to extract content from. Must have a valid file path
+            accessible to the current process.
+        extraction_config: Configuration for extraction process. If None, uses default
+            settings optimized for general document processing.
+        detection_config: Configuration for layout detection. If None, uses CPU-based
+            detection with balanced speed/accuracy settings.
+        includes: List of content types to extract. If None, extracts all available
+            content types. Use ExtractionType.ALL for all types or specify individual
+            types like [ExtractionType.TABLE, ExtractionType.TEXT].
+        progress_callback: Optional callback for progress tracking. Called with current
+            page number during processing. Useful for UI progress updates.
+        ocr_config: Configuration for OCR processing. If None, uses English language
+            with optimized settings for document analysis.
+        llm_config: Configuration for LLM-based content analysis. If None, uses local
+            Gemma3 model via Ollama server.
 
     Yields:
-        ExtractionResult: Extraction result for each processed page
+        ExtractionResult: Extraction result for each processed page. Each result
+            contains all extracted content for that specific page.
+
+    Raises:
+        Exception: If document processing fails, file access issues, or pipeline errors
+            occur. The specific exception depends on the failure point.
+
+    Example:
+        >>> doc = Document("large_document.pdf")
+        >>> for page_result in extract_content_streaming_sync(doc):
+        ...     print(f"Page {page_result.page_number}: {len(page_result.entries)} elements")
+        ...     # Process each page as it becomes available
     """
     if extraction_config is None:
         extraction_config = ExtractionConfig()

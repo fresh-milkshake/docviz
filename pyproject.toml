@@ -1,6 +1,6 @@
 [project]
 name = "docviz-python"
-version = "0.7.0"
+version = "0.8.0"
 description = "A Python library for extracting and analyzing content from any documents, supporting batch and selective extraction, custom configuration, and multiple output formats."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -52,6 +52,14 @@ cli = [
     "click>=8.2.1",
     "rich>=13.7.0",
     "rich-argparse>=0.3.0",
+]
+docs = [
+    "sphinx>=7.0.0",
+    "sphinx-copybutton>=0.5.0",
+    "sphinx-autodoc-typehints>=1.24.0",
+    "myst-parser>=2.0.0",
+    "furo>=2023.9.10",
+    "sphinxcontrib-mermaid>=1.0.0",
 ]
 
 [project.scripts]

@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 
@@ -8,10 +7,7 @@ def get_docviz_directory() -> Path:
     Returns:
         Path to the docviz directory.
     """
-    user_profile = os.getenv("USERPROFILE")
-    if not user_profile:
-        raise RuntimeError("USERPROFILE environment variable not found")
-    return Path(user_profile) / ".docviz"
+    return Path.home() / ".docviz"
 
 
 CONVERSION_MAX_WORKERS = 10

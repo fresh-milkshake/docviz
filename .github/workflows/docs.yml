@@ -1,12 +1,12 @@
 name: Deploy to GitHub Pages
 
 on:
-  # push:
-  #   branches:
-  #     - master
-  #   paths:
-  #     - 'docs/**'
-  #     - 'src/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs/**'
+      - 'src/docviz/**'
   workflow_dispatch: {}
 
 permissions:
