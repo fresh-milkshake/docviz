@@ -1,10 +1,10 @@
 import numpy as np
-from ultralytics import YOLO
 
 from docviz.lib.detection.backends.base import BaseDetectionBackend
 from docviz.lib.detection.deduplication import remove_duplicates_nms
 from docviz.lib.detection.labels import CanonicalLabel
 from docviz.logging import get_logger
+from docviz.model_cache import load_ultralytics_model
 from docviz.types import DetectionConfig, DetectionResult
 
 logger = get_logger(__name__)
@@ -31,7 +31,7 @@ class YoloDoclaynetBackend(BaseDetectionBackend):
         """
         logger.info(f"Initializing YoloDoclaynetBackend with model: {model_path}")
         self.model_path = model_path
-        self.model = YOLO(self.model_path)
+        self.model = load_ultralytics_model(self.model_path)
         logger.info("YoloDoclaynetBackend initialized successfully")
 
     def detect(

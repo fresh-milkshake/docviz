@@ -49,15 +49,13 @@ async def streaming_example():
     document = docviz.Document(r"examples\data\2507.21509v1.pdf")
 
     async for page_result in document.extract_streaming(
-        extraction_config=docviz.ExtractionConfig(page_limit=3),
+        extraction_config=docviz.ExtractionConfig(page_limit=10),
         includes=[docviz.ExtractionType.TEXT],
     ):
         page_result.save(
             document.name + f"_page{page_result.page_number}",
             save_format=docviz.SaveFormat.JSON,
         )
-        if page_result.page_number >= 3:
-            break
 
 
 async def main():

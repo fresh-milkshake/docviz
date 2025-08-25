@@ -8,19 +8,22 @@ from tqdm import tqdm
 
 from docviz.constants import (
     BASE_MODELS_URL,
-    MODELS_PATH,
+    DEFAULT_CHUNK_SIZE,
+    DOWNLOAD_TIMEOUT_SECONDS,
     REQUIRED_MODELS,
+    TESSERACT_ADDITIONAL_WIN_PATHS,
     TESSERACT_DEFAULT_WIN_PATH,
     TESSERACT_WIN_SETUP_FILENAME,
     TESSERACT_WIN_SETUP_URL,
     get_docviz_directory,
+    get_models_path,
 )
 from docviz.logging import get_logger
 
 logger = get_logger(__name__)
 
 
-async def download_file(url: str, path: Path, chunk_size: int = 8192) -> None:
+async def download_file(url: str, path: Path, chunk_size: int = DEFAULT_CHUNK_SIZE) -> None:
     """Download a file from a URL to a local path with progress bar.
 
     Args:
@@ -35,7 +38,7 @@ async def download_file(url: str, path: Path, chunk_size: int = 8192) -> None:
     logger.debug(f"Starting download from {url} to {path}")
 
     try:
-        response = requests.get(url, stream=True, timeout=30)
+        response = requests.get(url, stream=True, timeout=DOWNLOAD_TIMEOUT_SECONDS)
         response.raise_for_status()
 
         total_size = int(response.headers.get("content-length", 0))
@@ -75,11 +78,7 @@ def find_tesseract_executable() -> Path | None:
         Path to tesseract executable if found, None otherwise.
     """
     # Common installation paths
-    possible_paths = [
-        TESSERACT_DEFAULT_WIN_PATH,
-        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
-        r"C:\Tesseract-OCR\tesseract.exe",
-    ]
+    possible_paths = [TESSERACT_DEFAULT_WIN_PATH, *TESSERACT_ADDITIONAL_WIN_PATHS]
 
     # Check if tesseract is in PATH using shutil.which
     import shutil
@@ -231,7 +230,7 @@ async def check_dependencies() -> None:
             await install_tesseract(docviz_dir)
 
         # Ensure models are available
-        await ensure_models_available(MODELS_PATH)
+        await ensure_models_available(get_models_path())
 
         logger.info("All dependencies are ready")
 

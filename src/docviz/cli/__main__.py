@@ -62,11 +62,11 @@ def validate_file_path(ctx, param, value):
         >>> # Valid local file
         >>> validate_file_path(None, None, "document.pdf")
         "document.pdf"
-        >>> 
+        >>>
         >>> # Valid URL
         >>> validate_file_path(None, None, "https://example.com/doc.pdf")
         "https://example.com/doc.pdf"
-        >>> 
+        >>>
         >>> # Invalid file (raises BadParameter)
         >>> validate_file_path(None, None, "nonexistent.pdf")
         # Raises: click.BadParameter: File does not exist: nonexistent.pdf
@@ -124,11 +124,11 @@ def validate_output_format(ctx, param, value):
         <SaveFormat.JSON: 'json'>
         >>> validate_output_format(None, None, "CSV")
         <SaveFormat.CSV: 'csv'>
-        >>> 
+        >>>
         >>> # None returns default format
         >>> validate_output_format(None, None, None)
         <SaveFormat.JSON: 'json'>
-        >>> 
+        >>>
         >>> # Invalid format (raises BadParameter)
         >>> validate_output_format(None, None, "invalid")
         # Raises: click.BadParameter: Invalid format. Choose from: json, csv, excel, xml
@@ -178,19 +178,19 @@ def validate_extraction_types(ctx, param, value):
         >>> # Single type
         >>> validate_extraction_types(None, None, ("table",))
         [<ExtractionType.TABLE: 'table'>]
-        >>> 
+        >>>
         >>> # Multiple types
         >>> validate_extraction_types(None, None, ("table", "text"))
         [<ExtractionType.TABLE: 'table'>, <ExtractionType.TEXT: 'text'>]
-        >>> 
+        >>>
         >>> # All types (special handling)
         >>> validate_extraction_types(None, None, ("all",))
         [<ExtractionType.ALL: 'all'>]
-        >>> 
+        >>>
         >>> # None returns default
         >>> validate_extraction_types(None, None, None)
         [<ExtractionType.ALL: 'all'>]
-        >>> 
+        >>>
         >>> # Invalid type (raises BadParameter)
         >>> validate_extraction_types(None, None, ("invalid",))
         # Raises: click.BadParameter: Invalid extraction type 'invalid'. Choose from: all, table, text, figure, equation, other

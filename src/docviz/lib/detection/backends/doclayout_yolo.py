@@ -1,11 +1,11 @@
 import numpy as np
-from doclayout_yolo import YOLOv10
 from doclayout_yolo.engine.results import Results
 
 from docviz.lib.detection.backends.base import BaseDetectionBackend
 from docviz.lib.detection.deduplication import remove_duplicates_nms
 from docviz.lib.detection.labels import CanonicalLabel
 from docviz.logging import get_logger
+from docviz.model_cache import load_doclayout_yolo_model
 from docviz.types import DetectionConfig, DetectionResult
 
 logger = get_logger(__name__)
@@ -27,7 +27,7 @@ class DoclayoutYoloBackend(BaseDetectionBackend):
             model_path (str): Path to the YOLOv10 model file.
         """
         logger.info(f"Initializing DoclayoutYoloBackend with model: {model_path}")
-        self.model = YOLOv10(model_path)
+        self.model = load_doclayout_yolo_model(model_path)
         logger.info("DoclayoutYoloBackend initialized successfully")
 
         self.imgsz = settings.imagesize

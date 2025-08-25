@@ -5,9 +5,12 @@ from collections.abc import AsyncIterator, Callable, Iterator
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from docviz.constants import MODELS_PATH
-from docviz.lib.detection.backends import DetectionBackendEnum
-from docviz.lib.detection.labels import CanonicalLabel
+from docviz.config_cache import (
+    get_default_detection_config,
+    get_default_extraction_config,
+    get_default_llm_config,
+    get_default_ocr_config,
+)
 from docviz.lib.extraction import pipeline, pipeline_streaming
 from docviz.logging import get_logger
 from docviz.types import (
@@ -62,6 +65,7 @@ def _convert_pipeline_results_to_extraction_result(
         True
     """
     entries = []
+    page_number = 1  # Default page number if no results
 
     for page_result in pipeline_results:
         page_number = page_result.get("page_number", 1)
@@ -221,36 +225,13 @@ async def extract_content(
         >>> print(f"Extracted {len(result.entries)} elements")
     """
     if extraction_config is None:
-        extraction_config = ExtractionConfig()
+        extraction_config = get_default_extraction_config()
     if detection_config is None:
-        detection_config = DetectionConfig(
-            imagesize=1024,
-            confidence=0.5,
-            device="cpu",
-            layout_detection_backend=DetectionBackendEnum.DOCLAYOUT_YOLO,
-            model_path=str(MODELS_PATH / "doclayout_yolo_docstructbench_imgsz1024.pt"),
-        )
+        detection_config = get_default_detection_config()
     if ocr_config is None:
-        ocr_config = OCRConfig(
-            lang="eng",
-            chart_labels=[
-                CanonicalLabel.PICTURE.value,
-                CanonicalLabel.TABLE.value,
-                CanonicalLabel.FORMULA.value,
-            ],
-            labels_to_exclude=[
-                CanonicalLabel.OTHER.value,
-                CanonicalLabel.PAGE_FOOTER.value,
-                CanonicalLabel.PAGE_HEADER.value,
-                CanonicalLabel.FOOTNOTE.value,
-            ],
-        )
+        ocr_config = get_default_ocr_config(include_formulas=True)
     if llm_config is None:
-        llm_config = LLMConfig(
-            model="gemma3",
-            api_key="dummy-key",
-            base_url="http://localhost:11434/v1",
-        )
+        llm_config = get_default_llm_config()
     if includes is None:
         includes = ExtractionType.get_all()
 
@@ -345,37 +326,13 @@ def extract_content_sync(
         >>> print(f"Extracted {len(result.entries)} elements")
     """
     if extraction_config is None:
-        extraction_config = (
-            ExtractionConfig()
-        )  # TODO: move all default configs to constants or smth
+        extraction_config = get_default_extraction_config()
     if detection_config is None:
-        detection_config = DetectionConfig(  # TODO: same as above
-            imagesize=1024,
-            confidence=0.5,
-            device="cpu",
-            layout_detection_backend=DetectionBackendEnum.DOCLAYOUT_YOLO,
-            model_path=str(MODELS_PATH / "doclayout_yolo_docstructbench_imgsz1024.pt"),
-        )
+        detection_config = get_default_detection_config()
     if ocr_config is None:
-        ocr_config = OCRConfig(  # TODO: same as above
-            lang="eng",
-            chart_labels=[
-                CanonicalLabel.PICTURE.value,
-                CanonicalLabel.TABLE.value,
-            ],
-            labels_to_exclude=[
-                CanonicalLabel.OTHER.value,
-                CanonicalLabel.PAGE_FOOTER.value,
-                CanonicalLabel.PAGE_HEADER.value,
-                CanonicalLabel.FOOTNOTE.value,
-            ],
-        )
+        ocr_config = get_default_ocr_config(include_formulas=False)
     if llm_config is None:
-        llm_config = LLMConfig(  # TODO: same as above
-            model="gemma3",
-            api_key="dummy-key",
-            base_url="http://localhost:11434/v1",
-        )
+        llm_config = get_default_llm_config()
     if includes is None:
         includes = ExtractionType.get_all()
 
@@ -566,35 +523,13 @@ def extract_content_streaming_sync(
         ...     # Process each page as it becomes available
     """
     if extraction_config is None:
-        extraction_config = ExtractionConfig()
+        extraction_config = get_default_extraction_config()
     if detection_config is None:
-        detection_config = DetectionConfig(
-            imagesize=1024,
-            confidence=0.5,
-            device="cpu",
-            layout_detection_backend=DetectionBackendEnum.DOCLAYOUT_YOLO,
-            model_path=str(MODELS_PATH / "doclayout_yolo_docstructbench_imgsz1024.pt"),
-        )
+        detection_config = get_default_detection_config()
     if ocr_config is None:
-        ocr_config = OCRConfig(
-            lang="eng",
-            chart_labels=[
-                CanonicalLabel.PICTURE.value,
-                CanonicalLabel.TABLE.value,
-            ],
-            labels_to_exclude=[
-                CanonicalLabel.OTHER.value,
-                CanonicalLabel.PAGE_FOOTER.value,
-                CanonicalLabel.PAGE_HEADER.value,
-                CanonicalLabel.FOOTNOTE.value,
-            ],
-        )
+        ocr_config = get_default_ocr_config(include_formulas=False)
     if llm_config is None:
-        llm_config = LLMConfig(
-            model="gemma3",
-            api_key="dummy-key",
-            base_url="http://localhost:11434/v1",
-        )
+        llm_config = get_default_llm_config()
     if includes is None:
         includes = ExtractionType.get_all()
 

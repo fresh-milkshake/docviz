@@ -1,7 +1,9 @@
 from collections.abc import AsyncIterator, Callable, Iterator
+from functools import lru_cache
 
 import fitz  # PyMuPDF
 
+from docviz.constants import DEFAULT_EXTRACTION_CHUNK_SIZE
 from docviz.lib.document.utils import resolve_path_or_url
 from docviz.lib.functions import (
     extract_content,
@@ -20,6 +22,24 @@ from docviz.types import (
 )
 
 logger = get_logger(__name__)
+
+
+@lru_cache(maxsize=128)
+def _get_page_count_cached(file_path_str: str) -> int:
+    """Get page count for a document file with caching.
+
+    Args:
+        file_path_str: String representation of the file path
+
+    Returns:
+        Number of pages in the document
+    """
+    try:
+        with fitz.open(file_path_str) as doc:
+            return doc.page_count
+    except Exception as e:
+        logger.warning(f"Could not determine page count for {file_path_str}: {e}")
+        return 0
 
 
 class Document:
@@ -58,16 +78,16 @@ class Document:
         >>> # Create document from local file
         >>> doc = Document("document.pdf")
         >>> print(f"Document has {doc.page_count} pages")
-        >>> 
+        >>>
         >>> # Extract all content
         >>> result = await doc.extract_content()
         >>> print(f"Extracted {len(result.entries)} elements")
-        >>> 
+        >>>
         >>> # Extract specific content types
         >>> tables_only = await doc.extract_content(
         ...     includes=[ExtractionType.TABLE]
         ... )
-        >>> 
+        >>>
         >>> # Stream processing for large documents
         >>> async for page_result in doc.extract_streaming():
         ...     print(f"Page {page_result.page_number}: {len(page_result.entries)} elements")
@@ -123,7 +143,7 @@ class Document:
             ...     "https://example.com/document.pdf",
             ...     filename="my_document.pdf"
             ... )
-            >>> 
+            >>>
             >>> # Extract content from downloaded document
             >>> result = await doc.extract_content()
             >>> print(f"Extracted {len(result.entries)} elements")
@@ -160,12 +180,7 @@ class Document:
             >>> print(f"Still has {doc.page_count} pages")
         """
         if self._page_count is None:
-            try:
-                with fitz.open(self.file_path) as doc:
-                    self._page_count = doc.page_count
-            except Exception as e:
-                logger.warning(f"Could not determine page count for {self.file_path}: {e}")
-                self._page_count = 0
+            self._page_count = _get_page_count_cached(str(self.file_path))
         return self._page_count
 
     async def extract_content(
@@ -219,7 +234,7 @@ class Document:
             >>> # Extract all content using document's default config
             >>> result = await doc.extract_content()
             >>> print(f"Extracted {len(result.entries)} elements")
-            >>> 
+            >>>
             >>> # Extract specific content types with custom config
             >>> tables_only = await doc.extract_content(
             ...     includes=[ExtractionType.TABLE],
@@ -361,7 +376,7 @@ class Document:
 
     def extract_chunked(
         self,
-        chunk_size: int = 10,
+        chunk_size: int = DEFAULT_EXTRACTION_CHUNK_SIZE,
         extraction_config: ExtractionConfig | None = None,
         detection_config: DetectionConfig | None = None,
         includes: list[ExtractionType] | None = None,

@@ -45,7 +45,7 @@ class ExtractionConfig:
         ...     labels_to_exclude=["header", "footer"],
         ...     prefer_pdf_text=False
         ... )
-        >>> 
+        >>>
         >>> # High-quality extraction for small documents
         >>> config = ExtractionConfig(
         ...     page_limit=10,

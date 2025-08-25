@@ -31,13 +31,13 @@ class ExtractionType(enum.Enum):
     Example:
         >>> # Extract all content types
         >>> types = [ExtractionType.ALL]
-        >>> 
+        >>>
         >>> # Extract specific content types
         >>> types = [ExtractionType.TABLE, ExtractionType.TEXT]
-        >>> 
+        >>>
         >>> # Get all individual types (excluding ALL)
         >>> all_types = ExtractionType.get_all()
-        >>> 
+        >>>
         >>> # Convert to canonical label
         >>> label = ExtractionType.TABLE.to_canonical_label()
         >>> print(label)  # "table"
